@@ -1,0 +1,32 @@
+# Configuracion de despliegue del backend en Render (plan gratuito).
+# Sube este repositorio a GitHub y luego en Render elige "Blueprint".
+
+services:
+  - type: web
+    name: gymapp-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: JWT_SECRET
+        generateValue: true
+      # Rellena estos valores en el panel de Render con los datos de tu cuenta.
+      # Si no los pones, la app funcionara pero los datos NO se guardaran
+      # de forma permanente (Render borra el disco en cada reinicio).
+      # - key: TURSO_DATABASE_URL
+      #   sync: false
+      # - key: TURSO_AUTH_TOKEN
+      #   sync: false
+      # - key: CLOUDINARY_CLOUD_NAME
+      #   sync: false
+      # - key: CLOUDINARY_API_KEY
+      #   sync: false
+      # - key: CLOUDINARY_API_SECRET
+      #   sync: false
+      # - key: FRONTEND_URL
+      #   sync: false

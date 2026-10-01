@@ -1,0 +1,19 @@
+# Dependencias
+node_modules/
+
+# Base de datos local (se regenera sola)
+database.db
+
+# Fotos subidas por los usuarios
+uploads/
+
+# Variables de entorno (nunca subir el JWT_SECRET)
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema
+.DS_Store
+Thumbs.db

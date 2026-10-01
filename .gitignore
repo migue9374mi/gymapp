@@ -1,0 +1,31 @@
+# Dependencias (se reinstalan con npm install)
+node_modules/
+
+# Carpetas de compilacion
+dist/
+build/
+.vite/
+
+# Datos personales: NUNCA subir a GitHub
+backend/database.db
+backend/uploads/
+
+# Secretos: NUNCA subir el JWT_SECRET
+backend/.env
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
