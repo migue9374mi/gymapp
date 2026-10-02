@@ -56,6 +56,11 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// Un hash de bcrypt empieza siempre por $2b$ o $2a$
+function pareceHashValido(valor) {
+  return typeof valor === 'string' && /^\$2[aby]\$\d{2}\$/.test(valor);
+}
+
 // Login
 router.post('/login', async (req, res) => {
   try {
@@ -68,6 +73,13 @@ router.post('/login', async (req, res) => {
     // Buscar usuario
     const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
     if (!user) {
+      return res.status(400).json({ error: 'Credenciales incorrectas' });
+    }
+
+    // Si el hash guardado esta corrupto, bcrypt.compare reventaria con un error
+    // interno. Es mejor responder "credenciales incorrectas" que un 500.
+    if (!pareceHashValido(user.password)) {
+      console.error('Hash de contrasena invalido para el usuario', email);
       return res.status(400).json({ error: 'Credenciales incorrectas' });
     }
 

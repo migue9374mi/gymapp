@@ -192,6 +192,27 @@ function argumentoParaTurso(valor) {
   return { type: 'text', value: String(valor) }
 }
 
+/**
+ * Turso puede devolver cada valor envuelto como {type, value} en lugar del
+ * valor directo. Sin desempaquetarlo, un hash de contrasena llega a bcrypt
+ * como objeto y los ids se convierten en "[object Object]".
+ */
+function desenpaquetar(valor) {
+  if (
+    valor !== null &&
+    typeof valor === 'object' &&
+    !Array.isArray(valor) &&
+    'type' in valor &&
+    'value' in valor
+  ) {
+    if (valor.type === 'null') return null
+    if (valor.type === 'integer') return parseInt(valor.value, 10)
+    if (valor.type === 'double') return parseFloat(valor.value)
+    return valor.value
+  }
+  return valor
+}
+
 // Turso devuelve las filas como arrays; las convertimos a objetos
 function filasAObjetos(resultado) {
   if (!resultado || !resultado.rows || !resultado.cols) return []
@@ -199,7 +220,7 @@ function filasAObjetos(resultado) {
   return resultado.rows.map((fila) => {
     const objeto = {}
     nombres.forEach((nombre, i) => {
-      objeto[nombre] = fila[i]
+      objeto[nombre] = desenpaquetar(fila[i])
     })
     return objeto
   })
@@ -360,8 +381,8 @@ async function run(sql, params = []) {
   if (ES_NUBE) {
     const resultado = await tursoEjecutar(sql, params);
     return {
-      lastInsertRowid: Number(resultado.last_insert_rowid || 0),
-      changes: Number(resultado.rows_affected || 0),
+      lastInsertRowid: Number(desenpaquetar(resultado.last_insert_rowid) || 0),
+      changes: Number(desenpaquetar(resultado.rows_affected) || 0),
     };
   }
 
