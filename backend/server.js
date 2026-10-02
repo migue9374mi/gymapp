@@ -57,12 +57,31 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Algo salió mal en el servidor' });
 });
 
+// Sin este secreto no se pueden firmar los tokens de inicio de sesion,
+// y el registro/login fallarian con un error dificil de entender.
+if (!process.env.JWT_SECRET) {
+  console.error('');
+  console.error('=========================================================');
+  console.error('  FALTA LA VARIABLE JWT_SECRET');
+  console.error('  Sin ella el registro y el login NO funcionaran.');
+  console.error('  En Render: Environment > Add Environment Variable');
+  console.error('    Key:   JWT_SECRET');
+  console.error('    Value: una cadena larga y aleatoria');
+  console.error('=========================================================');
+  console.error('');
+}
+
 // Inicializar base de datos y arrancar servidor
 initDatabase().then(() => {
   app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Servidor corriendo en el puerto ${PORT}`);
+    if (process.env.TURSO_DATABASE_URL) {
+      console.log('Base de datos: Turso (nube)');
+    } else {
+      console.log('Base de datos: local (ATENCION: se pierde al reiniciar el servidor)');
+    }
   });
 }).catch(err => {
-  console.error('Error inicializando base de datos:', err);
+  console.error('Error inicializando base de datos:', err.message || err);
   process.exit(1);
 });

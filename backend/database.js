@@ -205,9 +205,38 @@ function filasAObjetos(resultado) {
   })
 }
 
+/**
+ * Turso muestra su URL como libsql://... pero la API HTTP de Node solo
+ * entiende http:// y https://. Convertimos los esquemas que no valen.
+ */
+function normalizarUrlTurso(urlCruda) {
+  let url = String(urlCruda || '').trim();
+
+  // libsql://base.turso.io -> https://base.turso.io
+  if (url.startsWith('libsql://')) {
+    url = 'https://' + url.slice('libsql://'.length);
+  }
+
+  // sqlite:// y ws:// tambien se aceptan por si acaso
+  if (url.startsWith('sqlite://')) {
+    url = 'https://' + url.slice('sqlite://'.length);
+  }
+
+  return url.replace(/\/$/, '');
+}
+
 /** Envia una lista de sentencias a Turso en una sola peticion (pipeline). */
 async function tursoEnviarPeticiones(lista) {
-  const url = `${process.env.TURSO_DATABASE_URL.replace(/\/$/, '')}/v2/pipeline`;
+  const base = normalizarUrlTurso(process.env.TURSO_DATABASE_URL);
+
+  if (!base.startsWith('http://') && !base.startsWith('https://')) {
+    throw new Error(
+      `TURSO_DATABASE_URL no es una URL valida: "${process.env.TURSO_DATABASE_URL}". `
+      + 'Debe empezar por https:// (en Render no vale file: ni una ruta local).'
+    );
+  }
+
+  const url = `${base}/v2/pipeline`;
 
   const requests = lista.map(({ sql, params }) => ({
     type: 'execute',
