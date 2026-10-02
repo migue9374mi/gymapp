@@ -178,13 +178,14 @@ CREATE TABLE IF NOT EXISTS medidas_musculo (
 
 // ==================== MODO NUBE (Turso) ====================
 
-// Convierte un parametro de JS al formato que espera la API de Turso
+// Convierte un parametro de JS al formato que espera la API de Turso.
+// Ojo: el tipo de los decimales en libSQL/Turso es "real", no "double".
 function argumentoParaTurso(valor) {
   if (valor === null || valor === undefined) return { type: 'null' }
   if (typeof valor === 'number') {
     return Number.isInteger(valor)
       ? { type: 'integer', value: String(valor) }
-      : { type: 'double', value: String(valor) }
+      : { type: 'real', value: String(valor) }
   }
   if (typeof valor === 'boolean') {
     return { type: 'integer', value: valor ? '1' : '0' }
@@ -207,6 +208,8 @@ function desenpaquetar(valor) {
   ) {
     if (valor.type === 'null') return null
     if (valor.type === 'integer') return parseInt(valor.value, 10)
+    // Turso devuelve los decimales como "real"
+    if (valor.type === 'real') return parseFloat(valor.value)
     if (valor.type === 'double') return parseFloat(valor.value)
     return valor.value
   }
@@ -338,12 +341,15 @@ async function initDatabase() {
 
     // Comprobamos que responde y que las tablas existen
     const prueba = await tursoEjecutar(
-      "SELECT COUNT(*) AS total FROM sqlite_master WHERE type='table' AND name='users'"
+      "SELECT COUNT(*) AS total FROM sqlite_master WHERE type='table'"
     );
-    const tablas = Number(prueba?.rows?.[0]?.[0] ?? 0);
+    const tablas = Number(desenpaquetar(prueba?.rows?.[0]?.[0]) ?? 0);
 
-    if (tablas === 0) {
-      throw new Error('No se pudo crear la tabla users en Turso');
+    if (tablas < 10) {
+      throw new Error(
+        `Solo se crearon ${tablas} tablas en Turso (se esperaban al menos 10). `
+        + 'Revisa que la base de datos este vacia o que el esquema se haya aplicado bien.'
+      );
     }
 
     console.log(`Base de datos conectada a Turso (${tablas} tablas)`);
