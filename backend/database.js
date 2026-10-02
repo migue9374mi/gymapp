@@ -205,17 +205,18 @@ function filasAObjetos(resultado) {
   })
 }
 
-async function tursoEjecutar(sql, params = []) {
+/** Envia una lista de sentencias a Turso en una sola peticion (pipeline). */
+async function tursoEnviarPeticiones(lista) {
   const url = `${process.env.TURSO_DATABASE_URL.replace(/\/$/, '')}/v2/pipeline`;
-  const peticiones = params.length
-    ? [
-        {
-          type: 'execute',
-          stmt: { sql, args: params.map(argumentoParaTurso) },
-        },
-        { type: 'close' },
-      ]
-    : [{ type: 'execute', stmt: { sql } }, { type: 'close' }];
+
+  const requests = lista.map(({ sql, params }) => ({
+    type: 'execute',
+    stmt:
+      params && params.length > 0
+        ? { sql, args: params.map(argumentoParaTurso) }
+        : { sql },
+  }));
+  requests.push({ type: 'close' });
 
   const cabeceras = { 'Content-Type': 'application/json' };
   if (process.env.TURSO_AUTH_TOKEN) {
@@ -224,8 +225,8 @@ async function tursoEjecutar(sql, params = []) {
 
   const respuesta = await fetch(url, {
     method: 'POST',
-    headers: cabeceros,
-    body: JSON.stringify({ requests: peticiones }),
+    headers: cabeceras,
+    body: JSON.stringify({ requests }),
   });
 
   if (!respuesta.ok) {
@@ -234,10 +235,20 @@ async function tursoEjecutar(sql, params = []) {
   }
 
   const datos = await respuesta.json();
-  if (datos.results?.[0]?.type === 'error') {
-    throw new Error(`Error de SQL: ${datos.results[0].error?.message || 'desconocido'}`);
+
+  // El pipeline devuelve un resultado por sentencia; si alguno falla hay que saberlo
+  for (const r of datos.results || []) {
+    if (r.type === 'error') {
+      throw new Error(`Error de SQL en Turso: ${r.error?.message || 'desconocido'}`);
+    }
   }
 
+  return datos;
+}
+
+/** Ejecuta una sentencia y devuelve su resultado. */
+async function tursoEjecutar(sql, params = []) {
+  const datos = await tursoEnviarPeticiones([{ sql, params }]);
   return datos.results?.[0]?.response?.result || {};
 }
 
@@ -268,9 +279,24 @@ function localAll(sql, params = []) {
 
 async function initDatabase() {
   if (ES_NUBE) {
-    // Comprobamos que la base de datos responde antes de arrancar
-    const r = await tursoEjecutar('SELECT 1');
-    console.log('Base de datos conectada a Turso');
+    // Creamos el esquema en la nube (si ya existe, IF NOT EXISTS lo ignora)
+    const sentencias = ESQUEMA.split(';')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    await tursoEnviarPeticiones(sentencias.map((sql) => ({ sql })));
+
+    // Comprobamos que responde y que las tablas existen
+    const prueba = await tursoEjecutar(
+      "SELECT COUNT(*) AS total FROM sqlite_master WHERE type='table' AND name='users'"
+    );
+    const tablas = Number(prueba?.rows?.[0]?.[0] ?? 0);
+
+    if (tablas === 0) {
+      throw new Error('No se pudo crear la tabla users en Turso');
+    }
+
+    console.log(`Base de datos conectada a Turso (${tablas} tablas)`);
     return;
   }
 
