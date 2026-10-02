@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '../api/axios'
+import api, { mensajeDeError } from '../api/axios'
 
 export default function Progreso() {
   const [stats, setStats] = useState(null)
@@ -20,7 +20,7 @@ export default function Progreso() {
       setStats(s.data)
       setHistorial(h.data.historial)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar estadisticas')
+      setError(mensajeDeError(err, 'Error al cargar estadisticas'))
     } finally {
       setCargando(false)
     }

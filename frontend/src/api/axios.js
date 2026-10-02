@@ -53,4 +53,37 @@ api.interceptors.response.use(
   }
 )
 
+/**
+ * Convierte cualquier error en un texto que se pueda mostrar.
+ *
+ * Hace falta porque un servidor puede responder con un objeto
+ * (por ejemplo {code, message}) en vez de un texto, y React no
+ * permite dibujar objetos: revienta con el error "Objects are not
+ * valid as a React child".
+ */
+export function mensajeDeError(err, porDefecto = 'Ocurrio un error') {
+  const datos = err?.response?.data
+
+  // Respuesta del backend: { error: '...' }
+  if (datos && typeof datos === 'object' && typeof datos.error === 'string' && datos.error) {
+    return datos.error
+  }
+
+  // Respuesta en texto plano (Vercel, HTML de error de Express, etc.)
+  if (typeof datos === 'string' && datos.trim() && datos.length < 300) {
+    return datos
+  }
+
+  // Respuesta con otra forma, por ejemplo { code, message }
+  if (datos && typeof datos === 'object') {
+    if (typeof datos.message === 'string' && datos.message) return datos.message
+    if (typeof datos.code === 'string' && datos.code) return `Error ${datos.code}`
+  }
+
+  // Error de red (el servidor no respondio)
+  if (typeof err?.message === 'string' && err.message) return err.message
+
+  return porDefecto
+}
+
 export default api

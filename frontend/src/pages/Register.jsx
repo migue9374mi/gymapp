@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { mensajeDeError } from '../api/axios'
 
 function Register() {
   const [nombre, setNombre] = useState('')
@@ -32,7 +33,7 @@ function Register() {
       await register(nombre, email, password)
       navigate('/dashboard')
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al registrar usuario')
+      setError(mensajeDeError(err, 'Error al registrar usuario'))
     } finally {
       setLoading(false)
     }

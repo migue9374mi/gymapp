@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { mensajeDeError } from '../api/axios'
 
 function Login() {
   const [email, setEmail] = useState('')
@@ -19,7 +20,7 @@ function Login() {
       await login(email, password)
       navigate('/dashboard')
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al iniciar sesión')
+      setError(mensajeDeError(err, 'Error al iniciar sesión'))
     } finally {
       setLoading(false)
     }

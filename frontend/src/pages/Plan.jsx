@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../api/axios'
+import api, { mensajeDeError } from '../api/axios'
 
 const DIAS = [
   { num: 0, nombre: 'Lunes', icono: 'bi-1-circle' },
@@ -46,7 +46,7 @@ export default function Plan() {
       setPlan(p.data.plan)
       setRutinas(r.data.rutinas)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar el plan')
+      setError(mensajeDeError(err, 'Error al cargar el plan'))
     } finally {
       setCargando(false)
     }
@@ -65,7 +65,7 @@ export default function Plan() {
       setRutinaSeleccionada('')
       cargarTodo()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al asignar rutina')
+      setError(mensajeDeError(err, 'Error al asignar rutina'))
       setTimeout(() => setError(''), 3000)
     }
   }
@@ -76,7 +76,7 @@ export default function Plan() {
       await api.delete(`/plan/${planId}`)
       cargarTodo()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al quitar')
+      setError(mensajeDeError(err, 'Error al quitar'))
     }
   }
 

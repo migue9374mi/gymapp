@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../api/axios'
+import api, { mensajeDeError } from '../api/axios'
 import SesionActiva from '../components/SesionActiva'
 
 const DIAS = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo']
@@ -109,7 +109,7 @@ export default function Entrenar() {
       setPlan(p.data.plan)
       setSesiones(s.data.sesiones)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar datos')
+      setError(mensajeDeError(err, 'Error al cargar datos'))
     } finally {
       setCargando(false)
     }
@@ -122,7 +122,7 @@ export default function Entrenar() {
     } catch (err) {
       // Si la sesion guardada ya no existe, la olvidamos
       borrarSesionActiva()
-      setError(err.response?.data?.error || 'Error al cargar la sesion')
+      setError(mensajeDeError(err, 'Error al cargar la sesion'))
     }
   }
 
@@ -156,7 +156,7 @@ useEffect(() => {
       await cargarSesion(sesionId)
       cargarDatos()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al iniciar entrenamiento')
+      setError(mensajeDeError(err, 'Error al iniciar entrenamiento'))
       setTimeout(() => setError(''), 3000)
     }
   }
@@ -177,7 +177,7 @@ useEffect(() => {
       setMostrarExtra(false)
       cargarSesion(sesionActiva.id)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al anadir ejercicio extra')
+      setError(mensajeDeError(err, 'Error al anadir ejercicio extra'))
     }
   }
 
@@ -192,7 +192,7 @@ useEffect(() => {
       setJustificacion('')
       cargarSesion(sesionActiva.id)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al quitar ejercicio')
+      setError(mensajeDeError(err, 'Error al quitar ejercicio'))
     }
   }
 
@@ -203,7 +203,7 @@ useEffect(() => {
       if (sesionActiva?.id === id) setSesionActiva(null)
       cargarDatos()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al eliminar')
+      setError(mensajeDeError(err, 'Error al eliminar'))
     }
   }
 

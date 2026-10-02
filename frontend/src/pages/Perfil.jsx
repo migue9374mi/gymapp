@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../api/axios'
+import api, { mensajeDeError } from '../api/axios'
 
 function formatearTiempo(minutos) {
   if (!minutos) return '0h 0m'
@@ -20,7 +20,7 @@ export default function Perfil() {
         const res = await api.get('/perfil')
         setDatos(res.data)
       } catch (err) {
-        setError(err.response?.data?.error || 'Error al cargar el perfil')
+        setError(mensajeDeError(err, 'Error al cargar el perfil'))
       } finally {
         setCargando(false)
       }

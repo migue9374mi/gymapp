@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../api/axios'
+import api, { mensajeDeError } from '../api/axios'
 
 const CATEGORIAS = [
   { valor: 'general', label: 'General' },
@@ -44,7 +44,7 @@ export default function Rutinas() {
       const res = await api.get('/rutinas')
       setRutinas(res.data.rutinas)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar rutinas')
+      setError(mensajeDeError(err, 'Error al cargar rutinas'))
     } finally {
       setCargando(false)
     }
@@ -69,7 +69,7 @@ export default function Rutinas() {
       setMostrarForm(false)
       cargarRutinas()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al crear rutina')
+      setError(mensajeDeError(err, 'Error al crear rutina'))
     } finally {
       setGuardando(false)
     }
@@ -84,7 +84,7 @@ export default function Rutinas() {
       await api.delete(`/rutinas/${rutina.id}`)
       setRutinas(rutinas.filter((r) => r.id !== rutina.id))
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al eliminar rutina')
+      setError(mensajeDeError(err, 'Error al eliminar rutina'))
     }
   }
 
@@ -95,7 +95,7 @@ export default function Rutinas() {
       setTimeout(() => setExito(''), 3000)
       cargarRutinas()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cambiar visibilidad')
+      setError(mensajeDeError(err, 'Error al cambiar visibilidad'))
     }
   }
 

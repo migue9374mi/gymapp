@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '../api/axios'
+import api, { mensajeDeError } from '../api/axios'
 
 // --- Persistencia de la sesion activa ---
 const CLAVE_SESION = 'gymapp_sesion_activa'
@@ -90,7 +90,7 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
       })
       onSesionCambiada()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al registrar la serie')
+      setError(mensajeDeError(err, 'Error al registrar la serie'))
     } finally {
       setGuardando(false)
     }
@@ -101,7 +101,7 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
       await api.delete(`/entrenamientos/sesiones/${sesion.id}/series/${ejercicioId}/${numero}`)
       onSesionCambiada()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al borrar la serie')
+      setError(mensajeDeError(err, 'Error al borrar la serie'))
     }
   }
 
@@ -112,7 +112,7 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
       const res = await api.post(`/entrenamientos/sesiones/${sesion.id}/finalizar`, { hora_fin: horaFin })
       onFinalizada(res.data)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al finalizar')
+      setError(mensajeDeError(err, 'Error al finalizar'))
     }
   }
 

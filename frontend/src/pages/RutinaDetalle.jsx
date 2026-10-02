@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import api from '../api/axios'
+import api, { mensajeDeError } from '../api/axios'
 import { CATEGORIAS, MUSCULOS, COLOR_CATEGORIA } from './Rutinas'
 
 // Mismos valores que usa el backend para calcular el descanso automaticamente
@@ -54,7 +54,7 @@ export default function RutinaDetalle() {
       setDescripcion(res.data.rutina.descripcion || '')
       setCategoria(res.data.rutina.categoria)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar la rutina')
+      setError(mensajeDeError(err, 'Error al cargar la rutina'))
     } finally {
       setCargando(false)
     }
@@ -73,7 +73,7 @@ export default function RutinaDetalle() {
       setEditando(false)
       cargarRutina()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al actualizar')
+      setError(mensajeDeError(err, 'Error al actualizar'))
     }
   }
 
@@ -87,7 +87,7 @@ export default function RutinaDetalle() {
       setEjercicio({ nombre: '', series: 3, reps: 10, peso: 0, descanso: 60, musculo: 'pecho' })
       cargarRutina()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al añadir ejercicio')
+      setError(mensajeDeError(err, 'Error al añadir ejercicio'))
     }
   }
 
@@ -97,7 +97,7 @@ export default function RutinaDetalle() {
       await api.delete(`/rutinas/${id}/ejercicios/${ej.id}`)
       cargarRutina()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al eliminar')
+      setError(mensajeDeError(err, 'Error al eliminar'))
     }
   }
 
@@ -118,7 +118,7 @@ export default function RutinaDetalle() {
       })
       cargarRutina()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al actualizar')
+      setError(mensajeDeError(err, 'Error al actualizar'))
     }
   }
 

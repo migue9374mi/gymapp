@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import api, { urlImagen } from '../api/axios'
+import api, { urlImagen, mensajeDeError } from '../api/axios'
 import { MUSCULOS } from './Rutinas'
 
 export default function Fotos() {
@@ -23,7 +23,7 @@ export default function Fotos() {
       const res = await api.get('/fotos')
       setFotos(res.data.fotos)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar las fotos')
+      setError(mensajeDeError(err, 'Error al cargar las fotos'))
     } finally {
       setCargando(false)
     }
@@ -81,7 +81,7 @@ export default function Fotos() {
       if (inputRef.current) inputRef.current.value = ''
       cargar()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al subir la foto')
+      setError(mensajeDeError(err, 'Error al subir la foto'))
     } finally {
       setSubiendo(false)
     }
@@ -93,7 +93,7 @@ export default function Fotos() {
       await api.delete(`/fotos/${foto.id}`)
       cargar()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al eliminar')
+      setError(mensajeDeError(err, 'Error al eliminar'))
     }
   }
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import api from '../api/axios'
+import api, { mensajeDeError } from '../api/axios'
 import { useAuth } from '../context/AuthContext'
 import { CATEGORIAS, MUSCULOS, COLOR_CATEGORIA } from './Rutinas'
 
@@ -22,7 +22,7 @@ export default function ComunidadDetalle() {
       const res = await api.get(`/comunidad/rutinas/${id}`)
       setDatos(res.data)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar la rutina')
+      setError(mensajeDeError(err, 'Error al cargar la rutina'))
     } finally {
       setCargando(false)
     }
@@ -40,7 +40,7 @@ export default function ComunidadDetalle() {
         rutina: { ...prev.rutina, me_gusta: res.data.me_gusta, num_likes: res.data.num_likes },
       }))
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al marcar')
+      setError(mensajeDeError(err, 'Error al marcar'))
     }
   }
 
@@ -57,7 +57,7 @@ export default function ComunidadDetalle() {
       }))
       setComentario('')
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al comentar')
+      setError(mensajeDeError(err, 'Error al comentar'))
     } finally {
       setEnviando(false)
     }
@@ -69,7 +69,7 @@ export default function ComunidadDetalle() {
       setExito(res.data.message)
       setTimeout(() => setExito(''), 4000)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al copiar')
+      setError(mensajeDeError(err, 'Error al copiar'))
       setTimeout(() => setError(''), 3000)
     }
   }
@@ -84,7 +84,7 @@ export default function ComunidadDetalle() {
         rutina: { ...prev.rutina, num_comentarios: prev.rutina.num_comentarios - 1 },
       }))
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al eliminar')
+      setError(mensajeDeError(err, 'Error al eliminar'))
     }
   }
 

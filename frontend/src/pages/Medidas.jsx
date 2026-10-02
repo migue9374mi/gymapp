@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '../api/axios'
+import api, { mensajeDeError } from '../api/axios'
 
 const MUSCULOS = [
   { id: 'brazo', label: 'Brazo' },
@@ -38,7 +38,7 @@ export default function Medidas() {
       const res = await api.get('/medidas')
       setMedidas(res.data.medidas)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar medidas')
+      setError(mensajeDeError(err, 'Error al cargar medidas'))
     } finally {
       setCargando(false)
     }
@@ -64,7 +64,7 @@ export default function Medidas() {
       setMedidasMusculo({})
       cargarMedidas()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al guardar medidas')
+      setError(mensajeDeError(err, 'Error al guardar medidas'))
     } finally {
       setGuardando(false)
     }
@@ -76,7 +76,7 @@ export default function Medidas() {
       await api.delete(`/medidas/${id}`)
       cargarMedidas()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al eliminar')
+      setError(mensajeDeError(err, 'Error al eliminar'))
     }
   }
 

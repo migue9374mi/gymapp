@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../api/axios'
+import api, { mensajeDeError } from '../api/axios'
 import { CATEGORIAS, MUSCULOS, COLOR_CATEGORIA } from './Rutinas'
 
 export default function Comunidad() {
@@ -26,7 +26,7 @@ export default function Comunidad() {
       })
       setRutinas(res.data.rutinas)
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cargar la comunidad')
+      setError(mensajeDeError(err, 'Error al cargar la comunidad'))
     } finally {
       setCargando(false)
     }
@@ -51,7 +51,7 @@ export default function Comunidad() {
         )
       )
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al marcar')
+      setError(mensajeDeError(err, 'Error al marcar'))
     }
   }
 

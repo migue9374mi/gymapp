@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '../api/axios'
 
 const AuthContext = createContext()
 
@@ -12,9 +12,9 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    // Si ya hay una sesion guardada, comprobamos que siga siendo valida.
+    // El token lo anade el interceptor de api, no hace falta configurarlo aqui.
+    if (localStorage.getItem('token')) {
       fetchUser()
     } else {
       setLoading(false)
@@ -23,37 +23,35 @@ export function AuthProvider({ children }) {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get('/api/auth/me')
+      const res = await api.get('/auth/me')
       setUser(res.data.user)
     } catch (error) {
+      // Token caducado o invalido: empezamos de cero
       localStorage.removeItem('token')
-      delete axios.defaults.headers.common['Authorization']
+      setUser(null)
     } finally {
       setLoading(false)
     }
   }
 
   const login = async (email, password) => {
-    const res = await axios.post('/api/auth/login', { email, password })
+    const res = await api.post('/auth/login', { email, password })
     const { token, user } = res.data
     localStorage.setItem('token', token)
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
     setUser(user)
     return user
   }
 
   const register = async (nombre, email, password) => {
-    const res = await axios.post('/api/auth/register', { nombre, email, password })
+    const res = await api.post('/auth/register', { nombre, email, password })
     const { token, user } = res.data
     localStorage.setItem('token', token)
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
     setUser(user)
     return user
   }
 
   const logout = () => {
     localStorage.removeItem('token')
-    delete axios.defaults.headers.common['Authorization']
     setUser(null)
   }
 
