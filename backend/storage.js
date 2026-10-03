@@ -107,21 +107,25 @@ async function subirACloudinary(file) {
   return resultado.secure_url;
 }
 
-/** Borra la imagen en Cloudinary. */
+/**
+ * Borra la imagen en Cloudinary.
+ * Devuelve true si Cloudinary confirma que la borro, y false si no.
+ * Nunca lanza: un fallo al borrar no debe impedir borrar el registro.
+ */
 async function borrarDeCloudinary(valor) {
-  if (!valor || !valor.startsWith('http')) return; // en local guardamos solo el nombre
+  if (!valor || !valor.startsWith('http')) return true; // en local guardamos solo el nombre
   try {
     const publicoId = publicIdDesdeUrl(valor);
     if (!publicoId) {
       console.error('No se pudo deducir el public_id de:', valor);
-      return;
+      return false;
     }
 
     const credenciales = Buffer.from(
       `${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}`
     ).toString('base64');
 
-    await fetch(
+    const respuesta = await fetch(
       `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/image/destroy`,
       {
         method: 'POST',
@@ -132,8 +136,25 @@ async function borrarDeCloudinary(valor) {
         body: JSON.stringify({ public_id: publicoId }),
       }
     );
+
+    const texto = await respuesta.text();
+
+    if (!respuesta.ok) {
+      console.error(`Cloudinary no borro "${publicoId}": HTTP ${respuesta.status} ${texto}`);
+      return false;
+    }
+
+    const resultado = JSON.parse(texto);
+    if (resultado.result !== 'ok') {
+      console.error(`Cloudinary no borro "${publicoId}": ${texto}`);
+      return false;
+    }
+
+    console.log(`Foto borrada de Cloudinary: ${publicoId}`);
+    return true;
   } catch (e) {
     console.error('No se pudo borrar de Cloudinary:', e.message);
+    return false;
   }
 }
 
@@ -154,9 +175,9 @@ async function guardarArchivo(file) {
   return nombre;
 }
 
-/** Elimina el archivo del almacenamiento. Silencioso si no existe. */
+/** Elimina el archivo del almacenamiento. Devuelve true si se borro. */
 async function borrarArchivo(valor) {
-  if (!valor) return;
+  if (!valor) return true;
 
   if (ES_NUBE) {
     return borrarDeCloudinary(valor);
@@ -164,11 +185,13 @@ async function borrarArchivo(valor) {
 
   // Nunca permitas salir de la carpeta de uploads
   const destino = path.join(CARPETA, path.basename(valor));
-  if (!destino.startsWith(CARPETA)) return;
+  if (!destino.startsWith(CARPETA)) return true;
   try {
     if (fs.existsSync(destino)) fs.unlinkSync(destino);
+    return true;
   } catch (e) {
     console.error('No se pudo borrar el archivo:', e.message);
+    return false;
   }
 }
 

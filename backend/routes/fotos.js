@@ -99,7 +99,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Eliminar una foto (borra tambien el archivo del disco)
+// Eliminar una foto (borra tambien el archivo del almacen)
 router.delete('/:id', async (req, res) => {
   try {
     const foto = await db.get('SELECT * FROM fotos WHERE id = ? AND user_id = ?', [req.params.id, req.userId]);
@@ -108,9 +108,12 @@ router.delete('/:id', async (req, res) => {
     }
 
     await db.run('DELETE FROM fotos WHERE id = ?', [req.params.id]);
-    await borrarArchivo(foto.archivo);
+    const borrada = await borrarArchivo(foto.archivo);
 
-    res.json({ message: 'Foto eliminada' });
+    res.json({
+      message: borrada ? 'Foto eliminada' : 'Foto quitada de tu lista',
+      borradaDelAlmacen: borrada,
+    });
   } catch (error) {
     console.error('Error eliminando foto:', error);
     res.status(500).json({ error: 'Error al eliminar la foto' });
