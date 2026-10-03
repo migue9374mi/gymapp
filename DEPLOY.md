@@ -48,9 +48,29 @@ asi que tus datos personales **no** se suben a GitHub.
 
 ## Parte 3 — Fotos en Cloudinary (gratis)
 
-1. Entra en https://cloudinary.com y creas cuenta.
-2. En el dashboard, abajo a la derecha veras tu **Cloud name**, **API key** y
-   **API secret**. Copia los tres.
+Sin esto las fotos se guardan en el disco del servidor y **se pierden en cada
+reinicio**: Render las borra. Con Cloudinary quedan guardadas para siempre.
+
+**Pasos:**
+
+1. Entra en https://cloudinary.com y creas cuenta (con Google es fastest).
+2. Acepta las condiciones y te llevara al panel.
+3. Arriba del todo hay un pantallazo azul con tres datos:
+   - **Cloud name** (por ejemplo `miapp1234`)
+   - **API key** (un numero larguisimo)
+   - **API secret** (una cadena con letras y numeros)
+4. Copia los tres. **Ojo: el API secret solo se muestra una vez.** Si se te
+   pasa, ve a *Settings* > *API Keys* y pulsalo para regenerarlo.
+5. Pegalos en **Render > gymapp-backend > Environment**, uno por uno:
+   - Key `CLOUDINARY_CLOUD_NAME`, Value tu cloud name
+   - Key `CLOUDINARY_API_KEY`, Value tu api key
+   - Key `CLOUDINARY_API_SECRET`, Value tu api secret
+6. Render reinicia el servicio solo al guardar. Espera un minuto.
+7. **Comprueba** en **Logs**: debe aparecer esta linea
+   ```
+   FOTOS: guardadas en CLOUDINARY (carpeta "gymapp")
+   ```
+   Si pone `guardadas en el disco local`, falta alguna de las tres variables.
 
 ---
 
