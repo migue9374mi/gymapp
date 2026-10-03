@@ -12,6 +12,10 @@ cosas a servicios gratuitos en internet:
 | Datos (usuarios, rutinas, pesos) | `database.db` | Turso |
 | Fotos de progreso | `backend/uploads` | Cloudinary |
 
+> **Estado actual:** los dos ya estan configurados. La app en
+> https://gymapp-peach-rho.vercel.app guarda usuarios, rutinas, pesos y fotos
+> fuera del servidor, asi que sobreviven a reinicios y a que apagues el PC.
+
 ---
 
 ## Parte 1 — Código en GitHub
