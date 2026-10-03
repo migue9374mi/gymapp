@@ -180,15 +180,20 @@ CREATE TABLE IF NOT EXISTS medidas_musculo (
 
 /**
  * Convierte un parametro de JS al formato de "args" de la API de Turso.
- * Tipos admitidos: null, integer, float, text y blob (ver docs.turso.tech/sdk/http).
- * El "value" va como texto para no perder precision en numeros grandes.
+ *
+ * Tipos admitidos: null, integer, float, text y blob.
+ * OJO con los decimales: Turso espera un numero JSON (f64), no un texto.
+ * Enviar "74.25" como texto falla con
+ *   "invalid type: string, expected f64".
+ * Los enteros si admiten texto, y es lo que conviene usar para no
+ * perder precision con numeros grandes.
  */
 function argumentoParaTurso(valor) {
   if (valor === null || valor === undefined) return { type: 'null' }
   if (typeof valor === 'number') {
     return Number.isInteger(valor)
       ? { type: 'integer', value: String(valor) }
-      : { type: 'float', value: String(valor) }
+      : { type: 'float', value: valor }
   }
   if (typeof valor === 'boolean') {
     return { type: 'integer', value: valor ? '1' : '0' }

@@ -23,14 +23,16 @@ const path = require('path');
   // --- Los tipos que usa el codigo deben existir en el protocolo ---
   console.log('=== Tipos usados por el codigo ===');
   const fuente = fs.readFileSync(path.join(__dirname, 'database.js'), 'utf8');
-  const usados = (() => {
-    // Solo los tipos de ARGUMENTO; {type:'execute'} y {type:'close'}
-    // son del pipeline, no de los valores.
-    const desde = fuente.indexOf('function argumentoParaTurso');
-    const hasta = fuente.indexOf('function desenpaquetar');
-    const cuerpo = fuente.slice(desde, hasta);
-    return [...cuerpo.matchAll(/type:\s*'([a-z]+)'/g)].map((m) => m[1]);
-  })();
+
+  // Solo los tipos de ARGUMENTO; {type:'execute'} y {type:'close'}
+  // son del pipeline, no de los valores.
+  const cuerpoArgDe = (texto) =>
+    texto.slice(
+      texto.indexOf('function argumentoParaTurso'),
+      texto.indexOf('function desenpaquetar')
+    );
+
+  const usados = [...cuerpoArgDe(fuente).matchAll(/type:\s*'([a-z]+)'/g)].map((m) => m[1]);
   const permitidos = ['null', 'integer', 'float', 'text', 'blob'];
   const sorted = [...new Set(usados)].sort();
   console.log(`  tipos de argumento: ${sorted.join(', ')}`);
@@ -44,6 +46,22 @@ const path = require('path');
   ok(
     fuente.includes("type: 'float'") && fuente.includes("valor.type === 'float'"),
     'lectura y escritura usan el mismo tipo para los decimales'
+  );
+
+  // Los decimales deben ir como numero JSON, no como texto.
+  // Turso responde: invalid type: string "74.25", expected f64
+  ok(
+    fuente.includes("{ type: 'float', value: valor }"),
+    'los decimales se envian como numero'
+  );
+  ok(
+    !fuente.includes("{ type: 'float', value: String(valor) }"),
+    'no se envian decimales como texto'
+  );
+  // El cuerpo de argumentoParaTurso debe contener el envio como numero
+  ok(
+    cuerpoArgDe(fuente).includes("{ type: 'float', value: valor }"),
+    'argumentoParaTurso envia el decimal como numero, no como texto'
   );
 
   // --- Usuario primero: el resto de tablas lo necesitan por clave foranea ---

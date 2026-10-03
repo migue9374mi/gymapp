@@ -21,9 +21,10 @@ const TIPOS_VALIDOS = ['null', 'integer', 'float', 'text', 'blob'];
 function envolver(valor) {
   if (valor === null || valor === undefined) return { type: 'null' };
   if (typeof valor === 'number') {
+    // Los enteros van como texto, los decimales como numero (f64)
     return Number.isInteger(valor)
       ? { type: 'integer', value: String(valor) }
-      : { type: 'float', value: String(valor) };
+      : { type: 'float', value: valor };
   }
   return { type: 'text', value: String(valor) };
 }
@@ -72,10 +73,24 @@ const servidor = http.createServer((req, res) => {
         continue;
       }
 
+      // Los decimales deben llegar como numero JSON (f64), no como texto.
+      // Asi responde el Turso real: invalid type: string, expected f64
+      const floatComoTexto = argsCrudos.find(
+        (a) => a && a.type === 'float' && typeof a.value !== 'number'
+      );
+      if (floatComoTexto) {
+        results.push(
+          error(
+            `JSON parse error: invalid type: string "${floatComoTexto.value}", expected f64`
+          )
+        );
+        continue;
+      }
+
       const args = argsCrudos.map((a) => {
         if (!a || a.type === 'null') return null;
         if (a.type === 'integer') return parseInt(a.value, 10);
-        if (a.type === 'float') return parseFloat(a.value);
+        if (a.type === 'float') return a.value;
         return a.value;
       });
 
