@@ -198,7 +198,17 @@ function argumentoParaTurso(valor) {
   if (typeof valor === 'boolean') {
     return { type: 'integer', value: valor ? '1' : '0' }
   }
-  return { type: 'text', value: String(valor) }
+  if (typeof valor === 'string') {
+    return { type: 'text', value: valor }
+  }
+
+  // Un objeto aqui significa que el valorllego sin desenvolver desde Turso.
+  // Si lo mandamos como texto se guardaria "[object Object]" en la base de
+  // datos, asi que preferimos fallar con un mensaje claro.
+  throw new Error(
+    `No se puede enviar a Turso un valor de tipo "${typeof valor}". `
+    + 'Suele significar que falta desenvolver un {type, value} de Turso.'
+  );
 }
 
 /**
@@ -208,19 +218,25 @@ function argumentoParaTurso(valor) {
  */
 function desenpaquetar(valor) {
   if (
-    valor !== null &&
-    typeof valor === 'object' &&
-    !Array.isArray(valor) &&
-    'type' in valor &&
-    'value' in valor
+    valor === null ||
+    typeof valor !== 'object' ||
+    Array.isArray(valor) ||
+    !('type' in valor)
   ) {
-    if (valor.type === 'null') return null
-    if (valor.type === 'integer') return parseInt(valor.value, 10)
-    // Los decimales llegan como "float" (docs: null, integer, float, text, blob)
-    if (valor.type === 'float') return parseFloat(valor.value)
-    return valor.value
+    return valor;
   }
-  return valor
+
+  // OJO: Turso devuelve los nulos como {"type":"null"} SIN clave "value".
+  // Si exigimos que existan las dos claves, los nulos se cuelan como objetos
+  // y React peta con "Objects are not valid as a React child".
+  if (valor.type === 'null') return null;
+  if (valor.type === 'integer') return parseInt(valor.value, 10);
+  if (valor.type === 'float') return parseFloat(valor.value);
+
+  // text, blob y cualquier tipo futuro que bringa "value"
+  if ('value' in valor) return valor.value;
+
+  return valor;
 }
 
 // Turso devuelve las filas como arrays; las convertimos a objetos
@@ -337,6 +353,39 @@ function localAll(sql, params = []) {
 
 // ==================== API PUBLICA (asincrona) ====================
 
+/**
+ * Limpia los valores que se guardaron como "[object Object]".
+ *
+ * Fue un bug: Turso devuelve los nulos como {"type":"null"}, mi funcion para
+ * desenvolverlos exigia tambien la clave "value", asi que los nulos llegaban
+ * como objetos. Al insertarlos de nuevo, el objeto se convertia en el texto
+ * "[object Object]" y se quedaba guardado en la base de datos.
+ *
+ * Los pesos y repeticiones nunca se rellenan a mano (el usuario los anota al
+ * entrenar), asi que devolverlos a NULL es lo correcto.
+ */
+async function repararValoresRotos() {
+  const columnas = [
+    ['sesiones_ejercicios', ['reps', 'peso']],
+    ['ejercicios', ['reps', 'peso']],
+  ];
+
+  let total = 0;
+
+  for (const [tabla, campos] of columnas) {
+    for (const campo of campos) {
+      const { changes } = await tursoEjecutar(
+        `UPDATE ${tabla} SET ${campo} = NULL WHERE ${campo} = '[object Object]'`
+      );
+      total += changes;
+    }
+  }
+
+  if (total > 0) {
+    console.log(`Reparados ${total} valores que estaban como "[object Object]"`);
+  }
+}
+
 async function initDatabase() {
   if (ES_NUBE) {
     // Creamos el esquema en la nube (si ya existe, IF NOT EXISTS lo ignora)
@@ -358,6 +407,8 @@ async function initDatabase() {
         + 'Revisa que la base de datos este vacia o que el esquema se haya aplicado bien.'
       );
     }
+
+    await repararValoresRotos();
 
     console.log(`Base de datos conectada a Turso (${tablas} tablas)`);
     return;

@@ -43,6 +43,18 @@ const path = require('path');
   );
   ok(!fuente.includes("'double'"), 'no usa "double" (no existe en Turso)');
   ok(!fuente.includes("'real'"), 'no usa "real" (no existe en Turso)');
+
+  // Turso devuelve los nulos como {"type":"null"} SIN clave "value".
+  // Si la funcion de desenvolver exige las dos claves, los nulos se escapan
+  // como objetos y React peta al pintarlos.
+  const cuerpoDesempaquetar = fuente.slice(
+    fuente.indexOf('function desenpaquetar'),
+    fuente.indexOf('// Turso devuelve las filas como arrays')
+  );
+  ok(
+    !/['"]type['"]\s*in\s*\w+\s*&&\s*['"]value['"]\s*in/.test(cuerpoDesempaquetar),
+    'desenpaquetar no exige las claves type y value a la vez'
+  );
   ok(
     fuente.includes("type: 'float'") && fuente.includes("valor.type === 'float'"),
     'lectura y escritura usan el mismo tipo para los decimales'
@@ -127,6 +139,22 @@ const path = require('path');
   const leidoCm = await db.get('SELECT valor FROM medidas_musculo WHERE valor = ?', [36.5]);
   ok(typeof leidoCm?.valor === 'number' && leidoCm.valor === 36.5, `medida 36.5 vuelve como numero (${leidoCm?.valor})`);
 
+  // --- Mandar un objeto a Turso debe fallar, no guardarse como texto ---
+  console.log('');
+  console.log('=== Objetos sin desenvolver ===');
+  try {
+    await db.run(
+      'INSERT INTO sesiones_series (sesion_id,sesion_ejercicio_id,numero_serie,peso,reps) VALUES (?,?,?,?,?)',
+      [1, 1, 99, { type: 'null' }, 5]
+    );
+    ok(false, 'un objeto sin desenvolver se guardo en silencio (no debe pasar)');
+  } catch (e) {
+    ok(
+      /tipo "object"/.test(e.message),
+      'un objeto sin desenvolver da un error claro'
+    );
+  }
+
   // --- Agregaciones ---
   console.log('');
   console.log('=== Agregaciones ===');
@@ -189,6 +217,41 @@ const path = require('path');
     ok(porMusculo.length > 0, `devuelve ${porMusculo.length} musculo(s): ${porMusculo.map((m) => `${m.musculo}=${m.volumen} (${m.series} series, ${m.veces} veces)`).join(', ')}`);
   } catch (e) {
     ok(false, `volumen -> ${e.message.slice(0, 60)}`);
+  }
+
+  // --- Nulos de ida y vuelta: esto era lo que rompia la app ---
+  console.log('');
+  console.log('=== Nulos de ida y vuelta ===');
+  try {
+    await db.run(
+      'INSERT INTO sesiones (user_id,rutina_id,fecha,duracion_minutos,hora_inicio,hora_fin,finalizada) VALUES (?,?,?,?,?,?,?)',
+      [uid, rutina.id, '2026-12-31', 0, '08:00', null, 0]
+    );
+    const sesion = await db.get('SELECT hora_fin, notas, duracion_minutos FROM sesiones WHERE fecha = ?', ['2026-12-31']);
+    ok(
+      sesion.hora_fin === null,
+      `hora_fin sin rellenar -> ${JSON.stringify(sesion.hora_fin)} (debe ser null, no {type:null})`
+    );
+    ok(
+      sesion.duracion_minutos === 0,
+      `duracion 0 -> ${JSON.stringify(sesion.duracion_minutos)} (cero no es nulo)`
+    );
+
+    // Ningun valor devuelto puede ser un objeto: React no los puede pintar
+    const fila = await db.get('SELECT * FROM sesiones_ejercicios LIMIT 1');
+    const objetos = Object.entries(fila).filter(([, v]) => v !== null && typeof v === 'object');
+    ok(
+      objetos.length === 0,
+      objetos.length === 0
+        ? 'ninguna columna de ejercicios viene como objeto'
+        : `vienen como objeto: ${objetos.map(([k]) => k).join(', ')}`
+    );
+    const roto = await db.get(
+      "SELECT COUNT(*) AS n FROM sesiones_ejercicios WHERE peso = '[object Object]' OR reps = '[object Object]'"
+    );
+    ok(Number(roto.n) === 0, `ningun valor guardado como "[object Object]" (${roto.n})`);
+  } catch (e) {
+    ok(false, `nulos -> ${e.message.slice(0, 60)}`);
   }
 
   console.log('');

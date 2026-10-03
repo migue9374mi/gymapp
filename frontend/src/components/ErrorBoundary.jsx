@@ -1,4 +1,25 @@
 import { Component } from 'react'
+import { useNavigate } from 'react-router-dom'
+
+// Salida del error.
+// Importante: navegar con React Router, NO con window.location.href.
+// href hace una recarga completa de la pagina; si el servidor no tiene reglas
+// de reescritura (vercel.json) responde 404 en vez de mostrar la app.
+function VolverAlInicio({ alPulsarSalir }) {
+  const navigate = useNavigate()
+
+  return (
+    <button
+      className="btn btn-primary mt-3"
+      onClick={() => {
+        alPulsarSalir()
+        navigate('/dashboard', { replace: true })
+      }}
+    >
+      <i className="bi bi-house me-2"></i>Volver al inicio
+    </button>
+  )
+}
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -44,15 +65,11 @@ class ErrorBoundary extends Component {
               {this.state.info?.componentStack ? `\n${this.state.info.componentStack}` : ''}
             </pre>
 
-            <button
-              className="btn btn-primary mt-3"
-              onClick={() => {
+            <VolverAlInicio
+              alPulsarSalir={() => {
                 this.setState({ error: null, info: null })
-                window.location.href = '/dashboard'
               }}
-            >
-              <i className="bi bi-house me-2"></i>Volver al inicio
-            </button>
+            />
           </div>
         </div>
       )
