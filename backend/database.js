@@ -178,14 +178,17 @@ CREATE TABLE IF NOT EXISTS medidas_musculo (
 
 // ==================== MODO NUBE (Turso) ====================
 
-// Convierte un parametro de JS al formato que espera la API de Turso.
-// Ojo: el tipo de los decimales en libSQL/Turso es "real", no "double".
+/**
+ * Convierte un parametro de JS al formato de "args" de la API de Turso.
+ * Tipos admitidos: null, integer, float, text y blob (ver docs.turso.tech/sdk/http).
+ * El "value" va como texto para no perder precision en numeros grandes.
+ */
 function argumentoParaTurso(valor) {
   if (valor === null || valor === undefined) return { type: 'null' }
   if (typeof valor === 'number') {
     return Number.isInteger(valor)
       ? { type: 'integer', value: String(valor) }
-      : { type: 'real', value: String(valor) }
+      : { type: 'float', value: String(valor) }
   }
   if (typeof valor === 'boolean') {
     return { type: 'integer', value: valor ? '1' : '0' }
@@ -208,9 +211,8 @@ function desenpaquetar(valor) {
   ) {
     if (valor.type === 'null') return null
     if (valor.type === 'integer') return parseInt(valor.value, 10)
-    // Turso devuelve los decimales como "real"
-    if (valor.type === 'real') return parseFloat(valor.value)
-    if (valor.type === 'double') return parseFloat(valor.value)
+    // Los decimales llegan como "float" (docs: null, integer, float, text, blob)
+    if (valor.type === 'float') return parseFloat(valor.value)
     return valor.value
   }
   return valor
@@ -388,7 +390,11 @@ async function run(sql, params = []) {
     const resultado = await tursoEjecutar(sql, params);
     return {
       lastInsertRowid: Number(desenpaquetar(resultado.last_insert_rowid) || 0),
-      changes: Number(desenpaquetar(resultado.rows_affected) || 0),
+      // La API actual devuelve "affected_row_count"; los servidores
+      // libSQL antiguos usaban "rows_affected".
+      changes: Number(
+        desenpaquetar(resultado.affected_row_count ?? resultado.rows_affected) || 0
+      ),
     };
   }
 
