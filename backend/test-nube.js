@@ -172,6 +172,21 @@ const path = require('path');
     );
     const esperado = (72.5 + 72.5 + 75 + 75) * 8;
     ok(v.total === esperado, `volumen ${v.total} kg (esperado ${esperado})`);
+
+    // La consulta de /estadisticas debe dar el mismo volumen.
+    // Antes usaba se.peso (NULL) y devolvia siempre 0.
+    const porMusculo = await db.all(
+      `SELECT se.musculo, COALESCE(SUM(ss.peso * COALESCE(ss.reps, se.reps)), 0) as volumen, COUNT(DISTINCT s.id) as veces, COUNT(ss.id) as series
+       FROM sesiones_series ss
+       JOIN sesiones s ON ss.sesion_id = s.id
+       JOIN sesiones_ejercicios se ON ss.sesion_ejercicio_id = se.id
+       WHERE s.user_id = ? AND s.finalizada = 1 AND se.musculo IS NOT NULL
+       GROUP BY se.musculo ORDER BY volumen DESC`,
+      [uid]
+    );
+    const suma = porMusculo.reduce((a, m) => a + m.volumen, 0);
+    ok(suma === esperado, `estadisticas por musculo suma ${suma} kg (esperado ${esperado})`);
+    ok(porMusculo.length > 0, `devuelve ${porMusculo.length} musculo(s): ${porMusculo.map((m) => `${m.musculo}=${m.volumen} (${m.series} series, ${m.veces} veces)`).join(', ')}`);
   } catch (e) {
     ok(false, `volumen -> ${e.message.slice(0, 60)}`);
   }

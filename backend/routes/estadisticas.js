@@ -154,14 +154,17 @@ router.get('/', async (req, res) => {
       [req.userId]
       )).total;
 
-    // Volumen por musculo (de los ejercicios de sesiones)
+    // Volumen por musculo. Sale de las series realmente registradas (ss), no del
+    // peso previsto del ejercicio: ese campo se deja en NULL a proposito, porque
+    // el peso lo anota el usuario serie a serie al entrenar. Multiplicar por NULL
+    // daba 0 siempre.
     const volumenPorMusculo = await db.all(
-      `SELECT se.musculo, SUM(se.series * se.reps * se.peso) as volumen, COUNT(*) as veces
-       FROM sesiones_ejercicios se
-       JOIN sesiones s ON se.sesion_id = s.id
-       WHERE s.user_id = ? AND s.finalizada = 1
-       GROUP BY se.musculo
-       ORDER BY volumen DESC`,
+      `SELECT se.musculo, COALESCE(SUM(ss.peso * COALESCE(ss.reps, se.reps)), 0) as volumen, COUNT(DISTINCT s.id) as veces, COUNT(ss.id) as series
+       FROM sesiones_series ss
+       JOIN sesiones s ON ss.sesion_id = s.id
+       JOIN sesiones_ejercicios se ON ss.sesion_ejercicio_id = se.id
+       WHERE s.user_id = ? AND s.finalizada = 1 AND se.musculo IS NOT NULL
+       GROUP BY se.musculo ORDER BY volumen DESC`,
       [req.userId]
     );
 
