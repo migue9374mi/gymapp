@@ -122,13 +122,13 @@ export async function programarAvisos(plan) {
     const [hora, minuto] = partesHora(horaElegida())
 
     const notificaciones = diasConRutina(plan).map((d) => ({
-        id: idDeDia(d.dia),
-        title: 'Te toca entrenar',
-        body: `${DIAS[d.dia]}: ${d.rutinas.map((r) => r.nombre).join(', ')}`,
-        schedule: { at: proximaOcurrencia(d.dia, hora, minuto) },
-        smallIcon: 'ic_stat_icon',
-        channelId: 'entrenamientos',
-      }))
+      id: idDeDia(d.dia),
+      title: 'Te toca entrenar',
+      body: `${DIAS[d.dia]}: ${d.rutinas.map((r) => r.nombre).join(', ')}`,
+      schedule: { at: proximaOcurrencia(d.dia, hora, minuto) },
+      smallIcon: 'ic_stat_icon',
+      channelId: 'entrenamientos',
+    }))
 
     if (notificaciones.length === 0) {
       return { programados: 0, motivo: 'el plan no tiene dias con rutina' }

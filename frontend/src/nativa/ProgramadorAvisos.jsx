@@ -10,14 +10,16 @@
 import { useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
-import { programarAvisos, avisosActivados } from './avisos'
+import { programarAvisos, avisosActivados, esAppNativa } from './avisos'
 
 export default function ProgramadorAvisos() {
   const { user } = useAuth()
   const idUsuario = user?.id
+  const nativa = esAppNativa()
 
   useEffect(() => {
-    if (!idUsuario) return
+    // En la web no hay avisos que programar: ni se monta ni se pregunta nada
+    if (!idUsuario || !nativa) return
 
     // Si el usuario los ha desactivado no gastamos ni una peticion
     if (!avisosActivados()) return
@@ -39,7 +41,7 @@ export default function ProgramadorAvisos() {
     programar()
 
     return () => { cancelado = true }
-  }, [idUsuario])
+  }, [idUsuario, nativa])
 
   return null
 }

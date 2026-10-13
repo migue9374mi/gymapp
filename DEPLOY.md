@@ -16,6 +16,10 @@ cosas a servicios gratuitos en internet:
 > https://gymapp-peach-rho.vercel.app guarda usuarios, rutinas, pesos y fotos
 > fuera del servidor, asi que sobreviven a reinicios y a que apagues el PC.
 
+> **Tambien hay app de Android:** un `.apk` que se instala a mano, con icono
+> propio, camara nativa y avisos de entrenamiento. No sustituye a la web: son
+> las dos, con la misma cuenta. Ver **APP-ANDROID.md**.
+
 ---
 
 ## Parte 1 — Código en GitHub
