@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import api, { urlImagen, mensajeDeError } from '../api/axios'
 import { MUSCULOS } from './Rutinas'
+import { esAppNativa, hacerFoto, validarImagen } from '../nativa/camara'
 
 export default function Fotos() {
   const [fotos, setFotos] = useState([])
@@ -17,6 +18,7 @@ export default function Fotos() {
 
   const [vista, setVista] = useState(null) // foto abierta en grande
   const inputRef = useRef(null)
+  const nativa = esAppNativa()
 
   const cargar = async () => {
     try {
@@ -38,18 +40,37 @@ export default function Fotos() {
     if (!f) return
 
     // Comprobamos el tipo antes de subir para dar feedback inmediato
-    if (!f.type.startsWith('image/')) {
-      setError('Solo se permiten imagenes')
-      return
-    }
-    if (f.size > 8 * 1024 * 1024) {
-      setError('La imagen no puede pesar mas de 8 MB')
+    const problema = validarImagen(f)
+    if (problema) {
+      setError(problema)
       return
     }
 
     setError('')
     setArchivo(f)
     setVistaPrevia(URL.createObjectURL(f))
+  }
+
+  // Boton de camara: solo dentro de la app de Android
+  const abrirCamara = async () => {
+    try {
+      setError('')
+      const f = await hacerFoto()
+      if (!f) return
+
+      const problema = validarImagen(f)
+      if (problema) {
+        setError(problema)
+        return
+      }
+
+      setArchivo(f)
+      setVistaPrevia(URL.createObjectURL(f))
+    } catch (err) {
+      // El usuario puede cancelar la camara: no es un error que haya que mostrar
+      if (err?.message === 'User cancelled photos app') return
+      setError(err?.message || 'No se pudo abrir la camara')
+    }
   }
 
   const subir = async (e) => {
@@ -123,13 +144,23 @@ export default function Fotos() {
             <form onSubmit={subir}>
               <div className="mb-3">
                 <label className="form-label">Imagen</label>
-                <input
-                  ref={inputRef}
-                  type="file"
-                  className="form-control"
-                  accept="image/*"
-                  onChange={elegirArchivo}
-                />
+                {nativa ? (
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary w-100"
+                    onClick={abrirCamara}
+                  >
+                    <i className="bi bi-camera me-2"></i>Hacer foto
+                  </button>
+                ) : (
+                  <input
+                    ref={inputRef}
+                    type="file"
+                    className="form-control"
+                    accept="image/*"
+                    onChange={elegirArchivo}
+                  />
+                )}
                 <small className="text-muted">jpg, png, webp o gif. Maximo 8 MB.</small>
               </div>
 

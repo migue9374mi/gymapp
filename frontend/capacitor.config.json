@@ -1,0 +1,14 @@
+{
+  "appId": "com.gymapp.miguel",
+  "appName": "GymApp",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#e63946"
+    }
+  }
+}

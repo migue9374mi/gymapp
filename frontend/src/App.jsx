@@ -15,6 +15,7 @@ import Comunidad from './pages/Comunidad'
 import ComunidadDetalle from './pages/ComunidadDetalle'
 import Fotos from './pages/Fotos'
 import ErrorBoundary from './components/ErrorBoundary'
+import ProgramadorAvisos from './nativa/ProgramadorAvisos'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -54,6 +55,7 @@ function AppContent() {
   return (
     <Router>
       {user && <Navbar />}
+      <ProgramadorAvisos />
       <ErrorBoundary key={window.location.pathname}>
         <Routes>
           <Route path="/login" element={

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
+import AjustesAvisos from '../nativa/AjustesAvisos'
 
 const DIAS = [
   { num: 0, nombre: 'Lunes', icono: 'bi-1-circle' },
@@ -101,6 +102,8 @@ export default function Plan() {
 
       {error && <div className="alert alert-danger">{error}</div>}
       {exito && <div className="alert alert-success"><i className="bi bi-check-circle me-2"></i>{exito}</div>}
+
+      <AjustesAvisos plan={plan} />
 
       {rutinas.length === 0 ? (
         <div className="dashboard-card text-center py-5">
