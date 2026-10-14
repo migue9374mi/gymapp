@@ -20,7 +20,7 @@ const express = require('express');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const db = require('../database');
-const { enviar, hayCorreo, verificar } = require('../correo');
+const { enviar, hayCorreo, modo: modoCorreo, verificar, probarPuerto } = require('../correo');
 
 const router = express.Router();
 
@@ -255,12 +255,29 @@ router.post('/recuperar/:token', async (req, res) => {
 // Estado del servicio de correo
 router.get('/estado', async (req, res) => {
   const comprobacion = await verificar();
+
+  // Si falla por SMTP, merece la pena saber si el problema es que el puerto
+  // esta bloqueado (tipico en la nube) o que la configuracion esta mal.
+  // Con un solo dato no se distingue, y asi se pierde mucho tiempo probando.
+  let puertos = null;
+  if (modoCorreo === 'smtp' && !comprobacion.conectado) {
+    const host = process.env.SMTP_HOST;
+    if (host) {
+      puertos = {
+        smtp: await probarPuerto(host, Number(process.env.SMTP_PORT) || 587),
+        https: await probarPuerto(host, 443),
+      };
+    }
+  }
+
   res.json({
     correoConfigurado: hayCorreo,
+    modo: modoCorreo,
     conexion: comprobacion.conectado,
-    // El motivo solo se enseña si algo va mal: ayuda a diagnosing
-    // sin filtrar nada útil para nadie
+    // El motivo solo se enseña si algo va mal: ayuda a diagnosticar
+    // sin filtrar nada útil
     error: comprobacion.conectado ? undefined : comprobacion.error,
+    puertos,
   });
 });
 

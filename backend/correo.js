@@ -1,42 +1,42 @@
 ﻿/**
  * Envio de correos.
  *
- * Se configura con variables de entorno, asi que el servicio de correo es
- * intercambiable sin tocar una linea de codigo. Con una cuenta de Gmail
- * bastan SMTP_HOST, SMTP_USER y SMTP_PASS; si algun dia prefieres
- * Brevo, Resend o similar, cambias tres valores y sigue igual.
+ * Hay dos formas de mandar un correo y en este proyecto solo funciona una:
  *
- * Si no hay nada configurado, la app sigue funcionando: la recuperacion de
- * contrasena avisa de que no se pudo enviar el correo, y lo demas no se ve
- * afectado.
+ *  - POR API HTTP (Brevo). Va por el puerto 443, el mismo que usa esta app
+ *    para todo lo demas. Es la que hay que usar en la nube.
  *
- * Por que un servicio externo y no Turso: lo he comprobado en la
- * documentacion oficial y Turso no tiene funcion de envio de correo.
+ *  - POR SMTP (Gmail, Mailgun...). Es lo tipico, pero Render bloquea las
+ *    conexiones salientes a los puertos de SMTP (25, 465, 587). Se queda
+ *    esperando hasta que se agota el tiempo y falla con "Connection timeout".
+ *    Sigue aqui para poder trabajar en local o si algun dia cambias de
+ *    alojamiento.
+ *
+ * Como se elige: si hay BREVO_API_KEY, se usa la API. Si no, se usa SMTP.
  */
 const nodemailer = require('nodemailer');
 
-// Configuracion: SMTP generico (sirve para Gmail, Brevo, Resend, Mailgun...)
+// --- Modo 1: API HTTP de Brevo ---
+const BREVO_API_KEY = process.env.BREVO_API_KEY
+const REMITENTE = process.env.EMAIL_REMITENTE
+
+// --- Modo 2: SMTP ---
 const SMTP_HOST = process.env.SMTP_HOST
 const SMTP_PORT = Number(process.env.SMTP_PORT) || 587
 const SMTP_USER = process.env.SMTP_USER
 const SMTP_PASS = process.env.SMTP_PASS
-// Remitente. Si no se pone, se usa SMTP_USER.
-const REMITENTE = process.env.EMAIL_REMITENTE || SMTP_USER
 
-const HAY_SMTP = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS)
+const MODO = BREVO_API_KEY ? 'http' : (SMTP_HOST && SMTP_USER && SMTP_PASS ? 'smtp' : 'ninguno')
 
-let transporte = null
-
-if (HAY_SMTP) {
-  transporte = nodemailer.createTransport({
+let transporteSmtp = null
+if (MODO === 'smtp') {
+  transporteSmtp = nodemailer.createTransport({
     host: SMTP_HOST,
     port: SMTP_PORT,
-    // El puerto 465 es TLS directo; el 587 va con STARTTLS
     secure: SMTP_PORT === 465,
     auth: { user: SMTP_USER, pass: SMTP_PASS },
-    // Sin esto, si el host o la contrasena estan mal, nodemailer se queda
-    // esperando dos minutos y la peticion web se cuelga. Con estos limites
-    // falla en segundos y ademas dice por que.
+    // Sin estos limites, si algo va mal la peticion web se queda
+    // colgando dos minutos. Con ellos falla en segundos y explica por que.
     connectionTimeout: 10 * 1000,
     greetingTimeout: 10 * 1000,
     socketTimeout: 20 * 1000,
@@ -45,15 +45,17 @@ if (HAY_SMTP) {
 
 console.log('')
 console.log('=========================================================')
-if (HAY_SMTP) {
-  console.log(`  CORREO: activado (${SMTP_HOST}:${SMTP_PORT})`)
-  console.log(`  Enviando como: ${REMITENTE}`)
+if (MODO === 'http') {
+  console.log('  CORREO: por API de Brevo (puerto 443)')
+  console.log(`  Remitente: ${REMITENTE || '(sin definir: pon EMAIL_REMITENTE)'}`)
+} else if (MODO === 'smtp') {
+  console.log(`  CORREO: por SMTP (${SMTP_HOST}:${SMTP_PORT})`)
+  console.log('  Aviso: en la nube los puertos SMTP suelen estar bloqueados.')
+  console.log('         Si falla, usa la API de Brevo: define BREVO_API_KEY.')
 } else {
   console.log('  CORREO: DESACTIVADO')
   console.log('  La recuperacion de contrasena no podra enviar el enlace.')
-  console.log('  Para activarlo, define en Render:')
-  console.log('    SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS')
-  console.log('  Con Gmail: SMTP_HOST=smtp.gmail.com y una "contrasena de app"')
+  console.log('  Para activarlo define BREVO_API_KEY (recomendado en la nube).')
 }
 console.log('=========================================================')
 console.log('')
@@ -63,13 +65,39 @@ console.log('')
  * Nunca lanza: que falle un correo no debe tumbar la peticion.
  */
 async function enviar({ para, asunto, texto, html }) {
-  if (!HAY_SMTP) {
-    console.warn('Intento de enviar correo sin configurar SMTP:', para, '-', asunto)
-    return { enviado: false, motivo: 'El envio de correos no esta configurado en el servidor' }
+  if (MODO === 'http') {
+    return enviarPorBrevo({ para, asunto, texto, html })
   }
+  if (MODO === 'smtp') {
+    return enviarPorSmtp({ para, asunto, texto, html })
+  }
+  return { enviado: false, motivo: 'El envio de correos no esta configurado en el servidor' }
+}
 
+async function enviarPorBrevo({ para, asunto, texto, html }) {
   try {
-    await transporte.sendMail({ from: REMITENTE, to: para, subject: asunto, text, html })
+    const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: { email: REMITENTE || SMTP_USER, name: 'GymApp' },
+        to: [{ email: para }],
+        subject: asunto,
+        html: html || `<p>${texto}</p>`,
+        text,
+      }),
+    })
+
+    if (!r.ok) {
+      const cuerpo = await r.text()
+      console.error(`Brevo devolvio ${r.status}: ${cuerpo.slice(0, 300)}`)
+      return { enviado: false, motivo: `Brevo devolvio ${r.status}` }
+    }
+
     console.log(`Correo enviado a ${para}: ${asunto}`)
     return { enviado: true }
   } catch (e) {
@@ -78,55 +106,100 @@ async function enviar({ para, asunto, texto, html }) {
   }
 }
 
-/**
- * Comprueba de verdad que se puede conectar y autenticar con el servidor.
- *
- * Tener las variables puestas no significa que el envío vaya a funcionar:
- * la contraseña puede estar mal, o el servidor puede rechazar la IP. Este
- * aviso se hace al arrancar y se puede consultar, para no tener que esperar
- * a que alguien se queje de que no le llega el correo.
- */
+async function enviarPorSmtp({ para, asunto, texto, html }) {
+  try {
+    await transporteSmtp.sendMail({
+      from: REMITENTE || SMTP_USER,
+      to: para,
+      subject: asunto,
+      text,
+      html,
+    })
+    console.log(`Correo enviado a ${para}: ${asunto}`)
+    return { enviado: true }
+  } catch (e) {
+    console.error(`No se pudo enviar el correo a ${para}:`, e.message)
+    return { enviado: false, motivo: e.message }
+  }
+}
+
+// ---------------------------------------------------------------- Comprobacion
+
 let comprobacion = null
 let comprobacionHecha = 0
 const CACHI_MS = 60 * 1000
 
+/**
+ * Comprueba de verdad que se puede mandar correo, no solo que las variables
+ * esten puestas. Tener SMTP_HOST escrito no significa que el envio funcione.
+ */
 async function verificar() {
-  if (!HAY_SMTP) {
-    return { conectado: false, error: 'No hay SMTP configurado' }
-  }
-
   const ahora = Date.now()
   if (comprobacion && ahora - comprobacionHecha < CACHI_MS) {
     return comprobacion
   }
 
-  try {
-    // Red de seguridad: si por lo que sea verify() se queda colgado,
-    // no dejamos la peticion web esperando indefinidamente
-    await Promise.race([
-      transporte.verify(),
-      new Promise((_, rechazar) =>
-        setTimeout(() => rechazar(new Error('El servidor de correo no ha contestado a tiempo')), 15000)
-      ),
-    ]);
-    comprobacion = { conectado: true }
-  } catch (e) {
-    // El mensaje de nodemailer suele traer el motivo real (EAUTH, ETIMEDOUT...)
-    comprobacion = { conectado: false, error: e.message }
+  if (MODO === 'http') {
+    try {
+      // Pedir los datos de la cuenta demuestra que la clave es valida
+      const r = await fetch('https://api.brevo.com/v3/account', {
+        headers: { accept: 'application/json', 'api-key': BREVO_API_KEY },
+      })
+      comprobacion = r.ok
+        ? { conectado: true }
+        : { conectado: false, error: `La clave de Brevo no es valida (HTTP ${r.status})` }
+    } catch (e) {
+      comprobacion = { conectado: false, error: e.message }
+    }
+  } else if (MODO === 'smtp') {
+    try {
+      await Promise.race([
+        transporteSmtp.verify(),
+        new Promise((_, rechazar) =>
+          setTimeout(() => rechazar(new Error('El servidor de correo no ha contestado a tiempo')), 15000)
+        ),
+      ])
+      comprobacion = { conectado: true }
+    } catch (e) {
+      comprobacion = { conectado: false, error: e.message }
+    }
+  } else {
+    comprobacion = { conectado: false, error: 'No hay ningun servicio de correo configurado' }
   }
 
   comprobacionHecha = ahora
   return comprobacion
 }
 
+/**
+ * Comprueba si se puede abrir una conexion TCP a un host y puerto.
+ *
+ * Sirve para distinguir dos fallos que se ven igual: que el puerto este
+ * bloqueado (típico en la nube) o que la configuracion este mal.
+ */
+async function probarPuerto(host, puerto, ms = 8000) {
+  const net = require('net')
+  return new Promise((resolve) => {
+    const socket = new net.Socket()
+    const terminar = (resultado) => {
+      socket.destroy()
+      resolve(resultado)
+    }
+    socket.setTimeout(ms)
+    socket.once('connect', () => terminar({ abierto: true }))
+    socket.once('timeout', () => terminar({ abierto: false, error: 'Tiempo de espera agotado' }))
+    socket.once('error', (e) => terminar({ abierto: false, error: e.code || e.message }))
+    socket.connect(puerto, host)
+  })
+}
+
 // Al arrancar, avisa de si el correo va a funcionar
 verificar().then((r) => {
   if (r.conectado) {
-    console.log(`  Conexion con el correo verificada: OK`)
+    console.log('  Conexion con el servicio de correo verificada: OK')
   } else {
-    console.error(`  ATENCION: no se pudo conectar con el servidor de correo: ${r.error}`)
-    console.error('  Los correos de recuperacion NO se van a enviar.')
+    console.error(`  ATENCION: el correo no va a funcionar: ${r.error}`)
   }
 })
 
-module.exports = { enviar, hayCorreo: HAY_SMTP, verificar }
+module.exports = { enviar, hayCorreo: MODO !== 'ninguno', modo: MODO, verificar, probarPuerto }
