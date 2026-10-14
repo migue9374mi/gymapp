@@ -68,18 +68,35 @@ if (MODO === 'http') {
 console.log('=========================================================')
 console.log('')
 
+// Se guarda el resultado del ultimo envio para poder diagnostics sin
+// depender de ir a mirar los logs del servidor.
+let ultimoEnvio = null
+
 /**
  * Manda un correo. Devuelve { enviado: true } o { enviado: false, motivo }.
  * Nunca lanza: que falle un correo no debe tumbar la peticion.
  */
 async function enviar({ para, asunto, texto, html }) {
+  const ahora = new Date().toISOString()
+
   if (MODO === 'http') {
-    return enviarPorBrevo({ para, asunto, texto, html })
+    const r = await enviarPorBrevo({ para, asunto, texto, html })
+    ultimoEnvio = { a: para, fecha: ahora, ...r }
+    return r
   }
   if (MODO === 'smtp') {
-    return enviarPorSmtp({ para, asunto, texto, html })
+    const r = await enviarPorSmtp({ para, asunto, texto, html })
+    ultimoEnvio = { a: para, fecha: ahora, ...r }
+    return r
   }
-  return { enviado: false, motivo: 'El envio de correos no esta configurado en el servidor' }
+
+  ultimoEnvio = {
+    a: para,
+    fecha: ahora,
+    enviado: false,
+    motivo: 'El envio de correos no esta configurado en el servidor',
+  }
+  return ultimoEnvio
 }
 
 async function enviarPorBrevo({ para, asunto, texto, html }) {
@@ -101,9 +118,17 @@ async function enviarPorBrevo({ para, asunto, texto, html }) {
     })
 
     if (!r.ok) {
+      // Brevo explica aqui exactamente que pasa: remitente sin verificar,
+      // clave sin permiso, cuota agotada... Se guarda entero para poder leerlo.
       const cuerpo = await r.text()
-      console.error(`Brevo devolvio ${r.status}: ${cuerpo.slice(0, 300)}`)
-      return { enviado: false, motivo: `Brevo devolvio ${r.status}` }
+      let mensaje = cuerpo
+      try {
+        const d = JSON.parse(cuerpo)
+        mensaje = d.message || cuerpo
+      } catch { /* si no es JSON, se deja el texto tal cual */ }
+
+      console.error(`Brevo devolvio ${r.status}: ${cuerpo.slice(0, 400)}`)
+      return { enviado: false, motivo: mensaje }
     }
 
     console.log(`Correo enviado a ${para}: ${asunto}`)
@@ -210,4 +235,11 @@ verificar().then((r) => {
   }
 })
 
-module.exports = { enviar, hayCorreo: MODO !== 'ninguno', modo: MODO, verificar, probarPuerto }
+module.exports = {
+  enviar,
+  hayCorreo: MODO !== 'ninguno',
+  modo: MODO,
+  verificar,
+  probarPuerto,
+  ultimoEnvio: () => ultimoEnvio,
+}

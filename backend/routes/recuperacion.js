@@ -20,7 +20,10 @@ const express = require('express');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const db = require('../database');
-const { enviar, hayCorreo, modo: modoCorreo, verificar, probarPuerto } = require('../correo');
+const { enviar, hayCorreo, modo: modoCorreo, verificar, probarPuerto, ultimoEnvio } = require('../correo');
+
+// Se apunta como va cada peticion, para poder diagnostics sin mirar logs.
+let ultimaPeticion = null;
 
 const router = express.Router();
 
@@ -76,6 +79,7 @@ router.post('/olvide-contrasena', async (req, res) => {
     // Sin esta comprobacion, la pagina serviria para averiguar que correos
     // estan registrados en la app.
     if (!user) {
+      ultimaPeticion = { email, situacion: 'ese correo no tiene cuenta' };
       return res.json({ message: MENSAJE_NEUTRAL });
     }
 
@@ -88,6 +92,11 @@ router.post('/olvide-contrasena', async (req, res) => {
 
     if (recientes.n >= MAX_PETICIONES_POR_HORA) {
       // Tampoco decimos "has pedido demasiado", por el mismo motivo
+      ultimaPeticion = {
+        email,
+        situacion: 'frenada: ya van 5 peticiones en la ultima hora',
+        peticionesUltimaHora: recientes.n,
+      };
       return res.json({ message: MENSAJE_NEUTRAL });
     }
 
@@ -131,6 +140,13 @@ router.post('/olvide-contrasena', async (req, res) => {
     if (!resultado.enviado) {
       console.error('Recuperacion generada pero no enviada:', resultado.motivo);
     }
+
+    ultimaPeticion = {
+      email,
+      situacion: resultado.enviado ? 'enlace enviado' : 'NO se pudo enviar',
+      motivo: resultado.enviado ? undefined : resultado.motivo,
+      enlace: enlace,
+    };
 
     res.json({ message: MENSAJE_NEUTRAL });
   } catch (error) {
@@ -278,6 +294,9 @@ router.get('/estado', async (req, res) => {
     // sin filtrar nada útil
     error: comprobacion.conectado ? undefined : comprobacion.error,
     puertos,
+    // Que paso en la ultima peticion de enlace, y en el ultimo envio
+    ultimaPeticion,
+    ultimoEnvio: ultimoEnvio(),
   });
 });
 
