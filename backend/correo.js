@@ -34,6 +34,12 @@ if (HAY_SMTP) {
     // El puerto 465 es TLS directo; el 587 va con STARTTLS
     secure: SMTP_PORT === 465,
     auth: { user: SMTP_USER, pass: SMTP_PASS },
+    // Sin esto, si el host o la contrasena estan mal, nodemailer se queda
+    // esperando dos minutos y la peticion web se cuelga. Con estos limites
+    // falla en segundos y ademas dice por que.
+    connectionTimeout: 10 * 1000,
+    greetingTimeout: 10 * 1000,
+    socketTimeout: 20 * 1000,
   })
 }
 
@@ -95,7 +101,14 @@ async function verificar() {
   }
 
   try {
-    await transporte.verify()
+    // Red de seguridad: si por lo que sea verify() se queda colgado,
+    // no dejamos la peticion web esperando indefinidamente
+    await Promise.race([
+      transporte.verify(),
+      new Promise((_, rechazar) =>
+        setTimeout(() => rechazar(new Error('El servidor de correo no ha contestado a tiempo')), 15000)
+      ),
+    ]);
     comprobacion = { conectado: true }
   } catch (e) {
     // El mensaje de nodemailer suele traer el motivo real (EAUTH, ETIMEDOUT...)
