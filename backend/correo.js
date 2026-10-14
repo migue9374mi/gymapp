@@ -17,8 +17,15 @@
 const nodemailer = require('nodemailer');
 
 // --- Modo 1: API HTTP de Brevo ---
-const BREVO_API_KEY = process.env.BREVO_API_KEY
-const REMITENTE = process.env.EMAIL_REMITENTE
+// Al copiar y pegar desde un panel es facil que se cuele un espacio al
+// final o unas comillas, y con eso Brevo contesta 401 sin decir nada util.
+// Se limpian antes de usarlas.
+function limpiarClave(valor) {
+  return String(valor || '').trim().replace(/^["']+|["']+$/g, '').trim()
+}
+
+const BREVO_API_KEY = limpiarClave(process.env.BREVO_API_KEY)
+const REMITENTE = String(process.env.EMAIL_REMITENTE || '').trim()
 
 // --- Modo 2: SMTP ---
 const SMTP_HOST = process.env.SMTP_HOST
@@ -47,6 +54,7 @@ console.log('')
 console.log('=========================================================')
 if (MODO === 'http') {
   console.log('  CORREO: por API de Brevo (puerto 443)')
+  console.log(`  Clave: ${BREVO_API_KEY.slice(0, 12)}... (${BREVO_API_KEY.length} caracteres)`)
   console.log(`  Remitente: ${REMITENTE || '(sin definir: pon EMAIL_REMITENTE)'}`)
 } else if (MODO === 'smtp') {
   console.log(`  CORREO: por SMTP (${SMTP_HOST}:${SMTP_PORT})`)
