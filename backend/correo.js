@@ -108,12 +108,15 @@ async function enviarPorBrevo({ para, asunto, texto, html }) {
         'api-key': BREVO_API_KEY,
         'content-type': 'application/json',
       },
+      // Ojo: la API de Brevo llama a estos campos htmlContent y textContent.
+      // Con "html" y "text" contesta "Either of htmlContent or textContent
+      // is required" y no manda nada.
       body: JSON.stringify({
         sender: { email: REMITENTE || SMTP_USER, name: 'GymApp' },
         to: [{ email: para }],
         subject: asunto,
-        html: html || `<p>${texto}</p>`,
-        text: texto,
+        htmlContent: html || `<p>${texto}</p>`,
+        textContent: texto,
       }),
     })
 
