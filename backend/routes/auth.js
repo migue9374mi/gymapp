@@ -126,6 +126,59 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
+// Cambiar la contraseña estando dentro de la app
+router.post('/cambiar-contrasena', authenticateToken, async (req, res) => {
+  try {
+    const { passwordActual, passwordNueva, passwordRepetida } = req.body;
+
+    if (!passwordActual || !passwordNueva) {
+      return res.status(400).json({ error: 'Rellena todos los campos' });
+    }
+
+    if (passwordNueva.length < 6) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    }
+
+    if (passwordNueva !== passwordRepetida) {
+      return res.status(400).json({ error: 'Las dos contraseñas nuevas no coinciden' });
+    }
+
+    const user = await db.get('SELECT id, password FROM users WHERE id = ?', [req.userId]);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // Igual que en el login: si el hash esta corrupto, bcrypt.compare reventaria
+    // con un error interno. Mejor un mensaje util que un 500.
+    if (!pareceHashValido(user.password)) {
+      console.error('Hash de contrasena invalido para el usuario', req.userId);
+      return res.status(500).json({ error: 'Hay un problema con tu cuenta, contacta con el administrador' });
+    }
+
+    // Pedir la actual es lo que evita que alguien con un token robado
+    // se quedase con la cuenta cambiando la contraseña.
+    const actualValida = await bcrypt.compare(passwordActual, user.password);
+    if (!actualValida) {
+      return res.status(400).json({ error: 'La contraseña actual no es correcta' });
+    }
+
+    // Si es la misma, avisamos: si no, el usuario cree que la ha cambiado
+    // cuando en realidad sigue igual que antes.
+    const esLaMisma = await bcrypt.compare(passwordNueva, user.password);
+    if (esLaMisma) {
+      return res.status(400).json({ error: 'La nueva contraseña debe ser distinta de la actual' });
+    }
+
+    const hashedPassword = await bcrypt.hash(passwordNueva, 10);
+    await db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.userId]);
+
+    res.json({ message: 'Contraseña actualizada' });
+  } catch (error) {
+    console.error('Error cambiando contraseña:', error);
+    res.status(500).json({ error: 'Error al cambiar la contraseña' });
+  }
+});
+
 // Middleware para verificar token
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];

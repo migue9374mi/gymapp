@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
+import CambiarContrasena from '../components/CambiarContrasena'
 
 function formatearTiempo(minutos) {
   if (!minutos) return '0h 0m'
@@ -71,6 +72,8 @@ export default function Perfil() {
           </Link>
         </div>
       </div>
+
+      <CambiarContrasena />
 
       {/* Totales */}
       <div className="row g-3 mb-4">
