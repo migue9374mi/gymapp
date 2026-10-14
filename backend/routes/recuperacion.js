@@ -63,6 +63,19 @@ function urlPublica() {
   return (web || origenes[0] || '').replace(/\/$/, '');
 }
 
+// Si no se averigua el dominio, el enlace del correo no llevaria a ninguna
+// parte. Conviene enterarse al arrancar y no en pleno uso.
+const URL_PUBLICA = urlPublica();
+
+if (process.env.NODE_ENV !== 'test' && !URL_PUBLICA) {
+  console.error('=========================================================');
+  console.error('  NO SE HA PODIDO AVERIGUAR LA URL DE LA APP');
+  console.error('  Los enlaces de recuperacion de contrasena saldran');
+  console.error('  sin dominio y no funcionaran.');
+  console.error('  Revisa FRONTEND_URL en las variables de entorno.');
+  console.error('=========================================================');
+}
+
 // ---------------------------------------------------------------- Pedir enlace
 
 router.post('/olvide-contrasena', async (req, res) => {
@@ -297,6 +310,8 @@ router.get('/estado', async (req, res) => {
     // Que paso en la ultima peticion de enlace, y en el ultimo envio
     ultimaPeticion,
     ultimoEnvio: ultimoEnvio(),
+    // El dominio que se pondra en los enlaces del correo
+    urlPublica: URL_PUBLICA || null,
   });
 });
 

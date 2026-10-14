@@ -113,7 +113,7 @@ async function enviarPorBrevo({ para, asunto, texto, html }) {
         to: [{ email: para }],
         subject: asunto,
         html: html || `<p>${texto}</p>`,
-        text,
+        text: texto,
       }),
     })
 
