@@ -20,7 +20,7 @@ const express = require('express');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const db = require('../database');
-const { enviar, hayCorreo } = require('../correo');
+const { enviar, hayCorreo, verificar } = require('../correo');
 
 const router = express.Router();
 
@@ -252,10 +252,16 @@ router.post('/recuperar/:token', async (req, res) => {
   }
 });
 
-// ---------------------------------------------------------------- Estado
-
-router.get('/estado', (req, res) => {
-  res.json({ correoConfigurado: hayCorreo });
+// Estado del servicio de correo
+router.get('/estado', async (req, res) => {
+  const comprobacion = await verificar();
+  res.json({
+    correoConfigurado: hayCorreo,
+    conexion: comprobacion.conectado,
+    // El motivo solo se enseña si algo va mal: ayuda a diagnosing
+    // sin filtrar nada útil para nadie
+    error: comprobacion.conectado ? undefined : comprobacion.error,
+  });
 });
 
 module.exports = router;

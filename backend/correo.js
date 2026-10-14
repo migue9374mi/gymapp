@@ -72,4 +72,48 @@ async function enviar({ para, asunto, texto, html }) {
   }
 }
 
-module.exports = { enviar, hayCorreo: HAY_SMTP }
+/**
+ * Comprueba de verdad que se puede conectar y autenticar con el servidor.
+ *
+ * Tener las variables puestas no significa que el envío vaya a funcionar:
+ * la contraseña puede estar mal, o el servidor puede rechazar la IP. Este
+ * aviso se hace al arrancar y se puede consultar, para no tener que esperar
+ * a que alguien se queje de que no le llega el correo.
+ */
+let comprobacion = null
+let comprobacionHecha = 0
+const CACHI_MS = 60 * 1000
+
+async function verificar() {
+  if (!HAY_SMTP) {
+    return { conectado: false, error: 'No hay SMTP configurado' }
+  }
+
+  const ahora = Date.now()
+  if (comprobacion && ahora - comprobacionHecha < CACHI_MS) {
+    return comprobacion
+  }
+
+  try {
+    await transporte.verify()
+    comprobacion = { conectado: true }
+  } catch (e) {
+    // El mensaje de nodemailer suele traer el motivo real (EAUTH, ETIMEDOUT...)
+    comprobacion = { conectado: false, error: e.message }
+  }
+
+  comprobacionHecha = ahora
+  return comprobacion
+}
+
+// Al arrancar, avisa de si el correo va a funcionar
+verificar().then((r) => {
+  if (r.conectado) {
+    console.log(`  Conexion con el correo verificada: OK`)
+  } else {
+    console.error(`  ATENCION: no se pudo conectar con el servidor de correo: ${r.error}`)
+    console.error('  Los correos de recuperacion NO se van a enviar.')
+  }
+})
+
+module.exports = { enviar, hayCorreo: HAY_SMTP, verificar }
