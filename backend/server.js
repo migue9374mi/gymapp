@@ -4,6 +4,7 @@ const cors = require('cors');
 const { initDatabase } = require('./database');
 
 const authRoutes = require('./routes/auth');
+const recuperacionRoutes = require('./routes/recuperacion');
 const rutinaRoutes = require('./routes/rutinas');
 const planRoutes = require('./routes/plan');
 const entrenamientoRoutes = require('./routes/entrenamientos');
@@ -34,6 +35,7 @@ app.use(express.json());
 
 // Rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/recuperar', recuperacionRoutes);
 app.use('/api/rutinas', rutinaRoutes);
 app.use('/api/plan', planRoutes);
 app.use('/api/entrenamientos', entrenamientoRoutes);

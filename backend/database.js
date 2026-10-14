@@ -174,6 +174,22 @@ CREATE TABLE IF NOT EXISTS medidas_musculo (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (medida_id) REFERENCES medidas(id) ON DELETE CASCADE
 );
+
+-- Enlaces para recuperar la contrasena.
+-- Guarda el SHA-256 del token, nunca el token en claro: si alguien lee la
+-- tabla no le sirve para iniciar sesion con el.
+CREATE TABLE IF NOT EXISTS recuperaciones (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  token_hash TEXT NOT NULL,
+  expira TEXT NOT NULL,
+  usado INTEGER DEFAULT 0,
+  creado TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_recuperaciones_token ON recuperaciones(token_hash);
+CREATE INDEX IF NOT EXISTS idx_recuperaciones_user ON recuperaciones(user_id);
 `;
 
 // ==================== MODO NUBE (Turso) ====================

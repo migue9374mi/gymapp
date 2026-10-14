@@ -63,6 +63,14 @@ function Login() {
               placeholder="••••••••"
               required
             />
+            <div className="text-end mt-2">
+              <Link
+                to="/olvide-contrasena"
+                style={{ color: '#e94560', fontSize: '0.9rem' }}
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
           </div>
 
           <button

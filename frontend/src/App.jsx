@@ -14,6 +14,8 @@ import Perfil from './pages/Perfil'
 import Comunidad from './pages/Comunidad'
 import ComunidadDetalle from './pages/ComunidadDetalle'
 import Fotos from './pages/Fotos'
+import OlvideContrasena from './pages/OlvideContrasena'
+import RecuperarContrasena from './pages/RecuperarContrasena'
 import ErrorBoundary from './components/ErrorBoundary'
 import ProgramadorAvisos from './nativa/ProgramadorAvisos'
 
@@ -66,6 +68,16 @@ function AppContent() {
           <Route path="/register" element={
             <PublicRoute>
               <Register />
+            </PublicRoute>
+          } />
+          <Route path="/olvide-contrasena" element={
+            <PublicRoute>
+              <OlvideContrasena />
+            </PublicRoute>
+          } />
+          <Route path="/recuperar/:token" element={
+            <PublicRoute>
+              <RecuperarContrasena />
             </PublicRoute>
           } />
           <Route path="/dashboard" element={
