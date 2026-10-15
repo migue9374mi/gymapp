@@ -58,9 +58,11 @@ function AppContent() {
   return (
     <Router>
       {user && <FondoApp />}
-      {user && <Navbar />}
-      <ProgramadorAvisos />
-      <ErrorBoundary key={window.location.pathname}>
+      {/* app-capa va por encima del fondo; ver index.css */}
+      <div className="app-capa">
+        {user && <Navbar />}
+        <ProgramadorAvisos />
+        <ErrorBoundary key={window.location.pathname}>
         <Routes>
           <Route path="/login" element={
             <PublicRoute>
@@ -140,6 +142,7 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </ErrorBoundary>
+      </div>
     </Router>
   )
 }

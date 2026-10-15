@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import api, { mensajeDeError, urlImagen, urlFondo } from '../api/axios'
-import { esAppNativa, hacerFoto, elegirDeGaleria, validarImagen } from '../nativa/camara'
+import { esAppNativa, hacerFoto, validarImagen } from '../nativa/camara'
 import { aplicarFondo } from './FondoApp'
 import { useAuth } from '../context/AuthContext'
 
@@ -62,22 +62,8 @@ export default function FondoUsuario() {
     }
   }
 
-  const abrirGaleria = async () => {
-    try {
-      setError('')
-      const f = await elegirDeGaleria({ anchoMaximo: 1920 })
-      if (f) preparar(f)
-    } catch (err) {
-      if (cancelado(err)) return
-      setError(err?.message || 'No se pudo abrir la galeria')
-    }
-  }
-
   /** Si el usuario cierra la pantalla sin elegir, no es un error que contar. */
-  const cancelado = (err) => {
-    const m = String(err?.message || '')
-    return /cancel/i.test(m)
-  }
+  const cancelado = (err) => /cancel/i.test(String(err?.message || ''))
 
   const subir = async (e) => {
     e.preventDefault()
@@ -194,44 +180,30 @@ export default function FondoUsuario() {
         <div className="col-md-7">
           <form onSubmit={subir}>
             <div className="mb-3">
-              {nativa ? (
-                <>
-                  <div className="row g-2">
-                    <div className="col-6">
-                      <button
-                        type="button"
-                        className="btn btn-outline-primary w-100"
-                        onClick={abrirGaleria}
-                      >
-                        <i className="bi bi-images me-1"></i>Elegir
-                      </button>
-                    </div>
-                    <div className="col-6">
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary w-100"
-                        onClick={abrirCamara}
-                      >
-                        <i className="bi bi-camera me-1"></i>Foto
-                      </button>
-                    </div>
-                  </div>
-                  <small className="text-muted">
-                    "Elegir" abre la galeria del telefono.
-                  </small>
-                </>
-              ) : (
-                <>
-                  <label className="form-label small text-muted">Elige una imagen</label>
-                  <input
-                    ref={inputRef}
-                    type="file"
-                    className="form-control"
-                    accept="image/*"
-                    onChange={elegirArchivo}
-                  />
-                </>
+              {/*
+                El selector de archivos abre la galeria del telefono tambien
+                dentro de la app, y devuelve un File de verdad. Por eso
+                "Elegir" es exactamente igual en web y en movil.
+              */}
+              <label className="form-label small text-muted">Elige una imagen</label>
+              <input
+                ref={inputRef}
+                type="file"
+                className="form-control"
+                accept="image/*"
+                onChange={elegirArchivo}
+              />
+
+              {nativa && (
+                <button
+                  type="button"
+                  className="btn btn-outline-primary w-100 mt-2"
+                  onClick={abrirCamara}
+                >
+                  <i className="bi bi-camera me-2"></i>Hacer una foto nueva
+                </button>
               )}
+
               <small className="text-muted">jpg, png o webp. Hasta 12 MB.</small>
             </div>
 

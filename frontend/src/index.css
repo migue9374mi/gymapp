@@ -15,30 +15,43 @@ body {
    ========================================================== */
 
 /*
-  La capa va fija y por debajo de todo. Se usa un elemento propio en vez de
-  background-attachment: fixed porque en los moviles fixed es bastante mas
-  lento y hace la app entrecortada al hacer scroll.
+  El fondo va en una capa fija por debajo de todo.
+
+  Antes llevaba z-index: -1, que es un truco fragil: si el navegador decide
+  que body crea su propio contexto de apilado, la imagen se va detras del
+  color de fondo y no se ve. Ahora la capa va en z-index 0 y el contenido de
+  la app va por encima en z-index 1, que es lo que se espera.
 */
 .fondo-capa {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
-  height: 100%;
-  z-index: -1;
+  height: 100vh;
+  /* 100dvh es el alto real visible; en el movil evita que la barra de
+     direcciones del navegador deje un hueco. */
+  height: 100dvh;
+  z-index: 0;
   overflow: hidden;
   background-color: #1a1a2e;
+}
+
+/* El contenido de la app, por encima del fondo */
+.app-capa {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
 }
 
 .fondo-imagen {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center;
   /*
-    El usuario elige en el deslizador cuanto se ve. El valor por defecto es
-    prudente: con una foto clara el texto se dejaria de leer.
+    cover = la imagen llena el hueco entero sin deformarse. Si la imagen es
+    mas ancha que la pantalla, se recorta por los lados en vez de estirarse,
+    que es lo que hacia que pareciese "mocha".
   */
+  object-fit: cover;
+  object-position: center center;
   opacity: var(--fondo-opacidad, 0.35);
   filter: blur(1px);
   transition: opacity 0.3s ease;
@@ -48,15 +61,10 @@ body {
   Velo oscuro sobre la foto. Aunque el usuario ponga la intensidad al
   maximo, el texto de las tarjetas seguiria siendo legible.
 */
-body.con-fondo::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+.fondo-velo {
+  position: absolute;
+  inset: 0;
   background: rgba(10, 10, 20, 0.55);
-  z-index: -1;
   pointer-events: none;
 }
 

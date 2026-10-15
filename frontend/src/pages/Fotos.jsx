@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import api, { urlImagen, mensajeDeError } from '../api/axios'
 import { MUSCULOS } from './Rutinas'
-import { esAppNativa, hacerFoto, elegirDeGaleria, validarImagen } from '../nativa/camara'
+import { esAppNativa, hacerFoto, validarImagen } from '../nativa/camara'
 
 export default function Fotos() {
   const [fotos, setFotos] = useState([])
@@ -51,12 +51,12 @@ export default function Fotos() {
     setVistaPrevia(URL.createObjectURL(f))
   }
 
-  // En el movil: elegir una foto del carrete o hacer una nueva.
-  // Cerrar sin elegir no es un error, asi que no se avisa de nada.
-  const abrirFuente = async (origen) => {
+  // Foto nueva con la camara. Para elegir una del carrete se usa el
+  // <input type="file"> de arriba, que en la app tambien abre la galeria.
+  const abrirCamara = async () => {
     try {
       setError('')
-      const f = origen === 'galeria' ? await elegirDeGaleria() : await hacerFoto()
+      const f = await hacerFoto()
       if (!f) return
 
       const problema = validarImagen(f)
@@ -68,8 +68,9 @@ export default function Fotos() {
       setArchivo(f)
       setVistaPrevia(URL.createObjectURL(f))
     } catch (err) {
+      // Cerrar sin hacer foto no es un error que haya que mostrar
       if (/cancel/i.test(String(err?.message || ''))) return
-      setError(err?.message || 'No se pudo abrir la imagen')
+      setError(err?.message || 'No se pudo abrir la camara')
     }
   }
 
@@ -144,35 +145,25 @@ export default function Fotos() {
             <form onSubmit={subir}>
               <div className="mb-3">
                 <label className="form-label">Imagen</label>
-                {nativa ? (
-                  <div className="row g-2">
-                    <div className="col-6">
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => abrirFuente('galeria')}
-                      >
-                        <i className="bi bi-images me-1"></i>Elegir
-                      </button>
-                    </div>
-                    <div className="col-6">
-                      <button
-                        type="button"
-                        className="btn btn-outline-primary"
-                        onClick={() => abrirFuente('camara')}
-                      >
-                        <i className="bi bi-camera me-1"></i>Foto
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <input
-                    ref={inputRef}
-                    type="file"
-                    className="form-control"
-                    accept="image/*"
-                    onChange={elegirArchivo}
-                  />
+                {/*
+                  El selector de archivos abre la galeria del telefono
+                  tambien dentro de la app, y es el mismo en web y movil.
+                */}
+                <input
+                  ref={inputRef}
+                  type="file"
+                  className="form-control"
+                  accept="image/*"
+                  onChange={elegirArchivo}
+                />
+                {nativa && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary w-100 mt-2"
+                    onClick={abrirCamara}
+                  >
+                    <i className="bi bi-camera me-2"></i>Hacer una foto nueva
+                  </button>
                 )}
                 <small className="text-muted">jpg, png, webp o gif. Maximo 8 MB.</small>
               </div>

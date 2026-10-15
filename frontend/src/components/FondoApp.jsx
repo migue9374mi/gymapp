@@ -48,6 +48,7 @@ export default function FondoApp() {
         // Solo de adorno: si la imagen no carga, no hay que ensuciar la consola
         onError={(e) => { e.currentTarget.style.display = 'none' }}
       />
+      <div className="fondo-velo"></div>
     </div>
   )
 }

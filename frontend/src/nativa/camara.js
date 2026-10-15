@@ -13,26 +13,26 @@ const TAMANO_MAXIMO = 8 * 1024 * 1024
 export const esAppNativa = () => Capacitor.isNativePlatform()
 
 /**
- * Abre la camara o la galeria del movil y devuelve un File listo para subir.
+ * Camara, para hacer fotos nuevas.
  *
- * Hay dos fuentes distintas a proposito: no es lo mismo hacer una foto nueva
- * que elegir una que ya tienes en el carrete. En la web esto no hace nada,
- * porque ahi se usa el <input type="file">, que ya abre la galeria.
+ * OJO: elegir una foto que ya esta en el movil NO se hace aqui, aunque
+ * pareceria lo logico. Se usa el <input type="file"> de toda la vida, que
+ * dentro de la app de Android tambien abre la galeria del telefono.
+ *
+ * El motivo es que el plugin, al elegir de la galeria, no siempre devuelve
+ * la imagen en base64, y sin ella no hay nada que subir. El selector de
+ * archivos devuelve un File de verdad, siempre, en web y en movil.
  */
-export async function abrirFoto(origen = 'camara', opciones = {}) {
+export async function hacerFoto(opciones = {}) {
   if (!esAppNativa()) return null
 
   const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera')
 
-  const fuente = origen === 'galeria' ? CameraSource.Photos : CameraSource.Camera
-
   const foto = await Camera.getPhoto({
     quality: opciones.calidad ?? CALIDAD,
     allowEditing: false,
-    // Base64 y no una URL del fichero: la foto no cambia de sitio si el
-    // telefono rearranca, y no hace falta ningun permiso de almacenamiento.
     resultType: CameraResultType.Base64,
-    source: fuente,
+    source: CameraSource.Camera,
     correctOrientation: true,
     // Reduce en el propio movil antes de pasar por la memoria: una foto de
     // 12 MB en base64 son unos 16 MB cargados, y algunos moviles se ahogan.
@@ -58,12 +58,6 @@ export async function abrirFoto(origen = 'camara', opciones = {}) {
 
   return archivo
 }
-
-/** Foto nueva con la camara. */
-export const hacerFoto = (opciones) => abrirFoto('camara', opciones)
-
-/** Elegir una foto que ya esta en el movil. */
-export const elegirDeGaleria = (opciones) => abrirFoto('galeria', opciones)
 
 /** Comprueba que un archivo sea una imagen del tamaño permitido. */
 export function validarImagen(archivo) {
