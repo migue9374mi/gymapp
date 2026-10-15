@@ -103,7 +103,10 @@ router.post('/login', async (req, res) => {
         id: user.id,
         nombre: user.nombre,
         email: user.email,
-        avatar: user.avatar
+        avatar: user.avatar,
+        // Para que el fondo se vea nada mas entrar, sin una peticion extra
+        fondo: user.fondo,
+        fondo_opacidad: user.fondo_opacidad,
       }
     });
   } catch (error) {
@@ -115,7 +118,10 @@ router.post('/login', async (req, res) => {
 // Obtener usuario actual
 router.get('/me', authenticateToken, async (req, res) => {
   try {
-    const user = await db.get('SELECT id, nombre, email, avatar, fecha_registro FROM users WHERE id = ?', [req.userId]);
+    const user = await db.get(
+      'SELECT id, nombre, email, avatar, fondo, fondo_opacidad, fecha_registro FROM users WHERE id = ?',
+      [req.userId]
+    );
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }

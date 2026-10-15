@@ -28,6 +28,10 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT UNIQUE NOT NULL,
   password TEXT NOT NULL,
   avatar TEXT,
+  -- Imagen de fondo que elige el usuario para la app (URL de Cloudinary)
+  fondo TEXT,
+  -- Que se vea mas o menos, de 0 a 1
+  fondo_opacidad REAL DEFAULT 0.35,
   fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -402,6 +406,33 @@ async function repararValoresRotos() {
   }
 }
 
+/**
+ * Anade columnas a tablas que ya existen.
+ *
+ * El ESQUEMA usa CREATE TABLE IF NOT EXISTS, asi que al desplegar por primera
+ * vez crea la tabla con todas las columnas, pero en una base que ya tiene la
+ * tabla vieja no anade las nuevas. Con esto se completa sola.
+ *
+ * Se intenta y se ignora el error de "columna duplicada", que solo aparece
+ * cuando la columna ya estaba: asi da igual ejecutarlo mil veces.
+ */
+async function anadirColumnasSiFaltan() {
+  const columnas = [
+    ['users', 'fondo', 'TEXT'],
+    ['users', 'fondo_opacidad', 'REAL DEFAULT 0.35'],
+  ];
+
+  for (const [tabla, columna, definicion] of columnas) {
+    try {
+      await tursoEjecutar(`ALTER TABLE ${tabla} ADD COLUMN ${columna} ${definicion}`);
+      console.log(`  Anadida la columna ${tabla}.${columna}`);
+    } catch (e) {
+      if (/duplicate column|ya existe/i.test(e.message)) continue;
+      throw e;
+    }
+  }
+}
+
 async function initDatabase() {
   if (ES_NUBE) {
     // Creamos el esquema en la nube (si ya existe, IF NOT EXISTS lo ignora)
@@ -425,6 +456,7 @@ async function initDatabase() {
     }
 
     await repararValoresRotos();
+    await anadirColumnasSiFaltan();
 
     console.log(`Base de datos conectada a Turso (${tablas} tablas)`);
     return;

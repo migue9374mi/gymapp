@@ -13,6 +13,7 @@ const medidasRoutes = require('./routes/medidas');
 const perfilRoutes = require('./routes/perfil');
 const comunidadRoutes = require('./routes/comunidad');
 const fotosRoutes = require('./routes/fotos');
+const fondoRoutes = require('./routes/fondo');
 const { CARPETA } = require('./storage');
 
 const app = express();
@@ -44,6 +45,7 @@ app.use('/api/medidas', medidasRoutes);
 app.use('/api/perfil', perfilRoutes);
 app.use('/api/comunidad', comunidadRoutes);
 app.use('/api/fotos', fotosRoutes);
+app.use('/api/fondo', fondoRoutes);
 
 // Servir las fotos que suben los usuarios
 app.use('/uploads', express.static(CARPETA));

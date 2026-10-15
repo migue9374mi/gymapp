@@ -55,12 +55,21 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  /**
+   * Cambia datos del usuario ya cargados, sin volver a pedirlo al servidor.
+   * Se usa para cosas que se ajustan al momento, como el fondo de la app.
+   */
+  const actualizarUsuario = (cambios) => {
+    setUser((anterior) => (anterior ? { ...anterior, ...cambios } : anterior))
+  }
+
   const value = {
     user,
     login,
     register,
     logout,
-    loading
+    loading,
+    actualizarUsuario
   }
 
   return (

@@ -27,6 +27,28 @@ export function urlImagen(valor) {
   return `/uploads/${valor}`
 }
 
+// URL de una imagen de fondo.
+//
+// Los fondos se ven a pantalla completa, asi que la foto original puede
+// pesar mucho. Cloudinary puede servir una version mas ligera cambiando la
+// URL, sin volver a subir nada: se le pide mas pequena y comprimida.
+// Solo funciona si la foto esta en Cloudinary; en local se usa tal cual.
+export function urlFondo(valor) {
+  if (!valor) return ''
+  if (!valor.startsWith('http')) {
+    // En local las fotos las sirve el backend desde /uploads
+    return import.meta.env.VITE_API_URL
+      ? `${import.meta.env.VITE_API_URL}/uploads/${valor}`
+      : `/uploads/${valor}`
+  }
+
+  if (valor.includes('res.cloudinary.com') && !valor.includes('/w_1600')) {
+    return valor.replace('/image/upload/', '/image/upload/w_1600,q_60,f_auto/')
+  }
+
+  return valor
+}
+
 // Interceptor para añadir el token a cada petición
 api.interceptors.request.use(
   (config) => {

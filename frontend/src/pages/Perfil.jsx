@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
 import CambiarContrasena from '../components/CambiarContrasena'
+import FondoUsuario from '../components/FondoUsuario'
 
 function formatearTiempo(minutos) {
   if (!minutos) return '0h 0m'
@@ -73,6 +74,7 @@ export default function Perfil() {
         </div>
       </div>
 
+      <FondoUsuario />
       <CambiarContrasena />
 
       {/* Totales */}

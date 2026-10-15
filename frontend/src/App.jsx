@@ -18,6 +18,7 @@ import OlvideContrasena from './pages/OlvideContrasena'
 import RecuperarContrasena from './pages/RecuperarContrasena'
 import ErrorBoundary from './components/ErrorBoundary'
 import ProgramadorAvisos from './nativa/ProgramadorAvisos'
+import FondoApp from './components/FondoApp'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -56,6 +57,7 @@ function AppContent() {
 
   return (
     <Router>
+      {user && <FondoApp />}
       {user && <Navbar />}
       <ProgramadorAvisos />
       <ErrorBoundary key={window.location.pathname}>
