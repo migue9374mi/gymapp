@@ -42,8 +42,10 @@ export function urlFondo(valor) {
       : `/uploads/${valor}`
   }
 
-  if (valor.includes('res.cloudinary.com') && !valor.includes('/w_1600')) {
-    return valor.replace('/image/upload/', '/image/upload/w_1600,q_60,f_auto/')
+  if (valor.includes('res.cloudinary.com') && !valor.includes('/c_limit')) {
+    // c_limit y no w_: w_ ampliaria las imagenes pequenas, dandoles un
+    // tamano mayor que el original. c_limit solo reduce si hace falta.
+    return valor.replace('/image/upload/', '/image/upload/c_limit,w_1600,q_60/')
   }
 
   return valor
