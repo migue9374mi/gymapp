@@ -43,19 +43,42 @@ body {
 }
 
 .fondo-imagen {
+  position: relative;
   width: 100%;
   height: 100%;
   /*
-    cover = la imagen llena el hueco entero sin deformarse. Si la imagen es
-    mas ancha que la pantalla, se recorta por los lados en vez de estirarse,
-    que es lo que hacia que pareciese "mocha".
+    contain = la foto se ve ENTERA, sin recortar ni deformar. Es lo que
+    quiere la gente: que se vea su foto tal cual, no un trozo.
   */
-  object-fit: cover;
+  object-fit: contain;
   object-position: center center;
   opacity: var(--fondo-opacidad, 0.35);
-  filter: blur(1px);
   transition: opacity 0.3s ease;
 }
+
+/*
+  Copia ampliada y desenfocada de la misma foto, por debajo. Cubre los
+  huecos que deja la foto real para que la pantalla no se quede con partes
+  vacias, como en WhatsApp o en la galeria del movil.
+*/
+.fondo-relleno {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /*
+    El desenfoque tapa los bordes de la imagen, asi que hay que ampliar un
+    poco mas o se notarian las esquinas.
+  */
+  filter: blur(28px) saturate(1.2);
+  transform: scale(1.15);
+  opacity: calc(var(--fondo-opacidad, 0.35) * 1.6);
+}
+
+/* En modo "cubrir" no hace falta rellenar nada: la foto llena la pantalla */
+body.fondo-cubrir .fondo-relleno { display: none; }
+body.fondo-cubrir .fondo-imagen { object-fit: cover; }
 
 /*
   Velo oscuro sobre la foto. Aunque el usuario ponga la intensidad al

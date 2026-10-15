@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import api, { mensajeDeError, urlImagen, urlFondo } from '../api/axios'
 import { esAppNativa, hacerFoto, validarImagen } from '../nativa/camara'
-import { aplicarFondo } from './FondoApp'
+import { aplicarFondo, ajusteFondo, guardarAjusteFondo } from './FondoApp'
 import { useAuth } from '../context/AuthContext'
 
 /**
@@ -20,6 +20,7 @@ export default function FondoUsuario() {
   const [error, setError] = useState('')
   const [exito, setExito] = useState('')
   const [ocupado, setOcupado] = useState(false)
+  const [ajuste, setAjuste] = useState(ajusteFondo())
   const inputRef = useRef(null)
 
   const fondoActual = user?.fondo
@@ -108,6 +109,11 @@ export default function FondoUsuario() {
     } catch (err) {
       setError(mensajeDeError(err, 'No se pudo guardar la intensidad'))
     }
+  }
+
+  const cambiarAjuste = (valor) => {
+    setAjuste(valor)
+    guardarAjusteFondo(valor)
   }
 
   const quitar = async () => {
@@ -239,6 +245,32 @@ export default function FondoUsuario() {
               </button>
             )}
           </form>
+
+          {fondoActual && (
+            <div className="mt-3 pt-3 border-top">
+              <label className="form-label small text-muted">Como se ajusta</label>
+              <div className="btn-group w-100" role="group">
+                <button
+                  type="button"
+                  className={`btn btn-sm ${ajuste === 'entera' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                  onClick={() => cambiarAjuste('entera')}
+                >
+                  Verla entera
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${ajuste === 'cubrir' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                  onClick={() => cambiarAjuste('cubrir')}
+                >
+                  Cubrir pantalla
+                </button>
+              </div>
+              <small className="text-muted">
+                "Verla entera" no recorta nada. "Cubrir pantalla" recorta por los
+                lados hasta llenar el hueco.
+              </small>
+            </div>
+          )}
         </div>
       </div>
 
