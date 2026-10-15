@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import api, { urlImagen, mensajeDeError } from '../api/axios'
 import { MUSCULOS } from './Rutinas'
-import { esAppNativa, hacerFoto, validarImagen } from '../nativa/camara'
+import { esAppNativa, hacerFoto, elegirDeGaleria, validarImagen } from '../nativa/camara'
 
 export default function Fotos() {
   const [fotos, setFotos] = useState([])
@@ -51,11 +51,12 @@ export default function Fotos() {
     setVistaPrevia(URL.createObjectURL(f))
   }
 
-  // Boton de camara: solo dentro de la app de Android
-  const abrirCamara = async () => {
+  // En el movil: elegir una foto del carrete o hacer una nueva.
+  // Cerrar sin elegir no es un error, asi que no se avisa de nada.
+  const abrirFuente = async (origen) => {
     try {
       setError('')
-      const f = await hacerFoto()
+      const f = origen === 'galeria' ? await elegirDeGaleria() : await hacerFoto()
       if (!f) return
 
       const problema = validarImagen(f)
@@ -67,9 +68,8 @@ export default function Fotos() {
       setArchivo(f)
       setVistaPrevia(URL.createObjectURL(f))
     } catch (err) {
-      // El usuario puede cancelar la camara: no es un error que haya que mostrar
-      if (err?.message === 'User cancelled photos app') return
-      setError(err?.message || 'No se pudo abrir la camara')
+      if (/cancel/i.test(String(err?.message || ''))) return
+      setError(err?.message || 'No se pudo abrir la imagen')
     }
   }
 
@@ -145,13 +145,26 @@ export default function Fotos() {
               <div className="mb-3">
                 <label className="form-label">Imagen</label>
                 {nativa ? (
-                  <button
-                    type="button"
-                    className="btn btn-outline-primary w-100"
-                    onClick={abrirCamara}
-                  >
-                    <i className="bi bi-camera me-2"></i>Hacer foto
-                  </button>
+                  <div className="row g-2">
+                    <div className="col-6">
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => abrirFuente('galeria')}
+                      >
+                        <i className="bi bi-images me-1"></i>Elegir
+                      </button>
+                    </div>
+                    <div className="col-6">
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary"
+                        onClick={() => abrirFuente('camara')}
+                      >
+                        <i className="bi bi-camera me-1"></i>Foto
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <input
                     ref={inputRef}

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import api, { mensajeDeError, urlImagen, urlFondo } from '../api/axios'
-import { esAppNativa, hacerFoto, validarImagen } from '../nativa/camara'
+import { esAppNativa, hacerFoto, elegirDeGaleria, validarImagen } from '../nativa/camara'
 import { aplicarFondo } from './FondoApp'
 import { useAuth } from '../context/AuthContext'
 
@@ -53,12 +53,30 @@ export default function FondoUsuario() {
   const abrirCamara = async () => {
     try {
       setError('')
-      const f = await hacerFoto()
+      // El fondo se ve a pantalla completa, asi que sobra con 1920 px
+      const f = await hacerFoto({ anchoMaximo: 1920 })
       if (f) preparar(f)
     } catch (err) {
-      if (err?.message === 'User cancelled photos app') return
+      if (cancelado(err)) return
       setError(err?.message || 'No se pudo abrir la camara')
     }
+  }
+
+  const abrirGaleria = async () => {
+    try {
+      setError('')
+      const f = await elegirDeGaleria({ anchoMaximo: 1920 })
+      if (f) preparar(f)
+    } catch (err) {
+      if (cancelado(err)) return
+      setError(err?.message || 'No se pudo abrir la galeria')
+    }
+  }
+
+  /** Si el usuario cierra la pantalla sin elegir, no es un error que contar. */
+  const cancelado = (err) => {
+    const m = String(err?.message || '')
+    return /cancel/i.test(m)
   }
 
   const subir = async (e) => {
@@ -177,14 +195,31 @@ export default function FondoUsuario() {
           <form onSubmit={subir}>
             <div className="mb-3">
               {nativa ? (
-                <button
-                  type="button"
-                  className="btn btn-outline-primary w-100"
-                  onClick={abrirCamara}
-                >
-                  <i className="bi bi-camera me-2"></i>
-                  {fondoActual ? 'Cambiar con la camara' : 'Hacer foto'}
-                </button>
+                <>
+                  <div className="row g-2">
+                    <div className="col-6">
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary w-100"
+                        onClick={abrirGaleria}
+                      >
+                        <i className="bi bi-images me-1"></i>Elegir
+                      </button>
+                    </div>
+                    <div className="col-6">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary w-100"
+                        onClick={abrirCamara}
+                      >
+                        <i className="bi bi-camera me-1"></i>Foto
+                      </button>
+                    </div>
+                  </div>
+                  <small className="text-muted">
+                    "Elegir" abre la galeria del telefono.
+                  </small>
+                </>
               ) : (
                 <>
                   <label className="form-label small text-muted">Elige una imagen</label>
