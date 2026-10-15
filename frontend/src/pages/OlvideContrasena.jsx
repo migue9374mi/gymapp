@@ -79,7 +79,7 @@ export default function OlvideContrasena() {
 
         <div className="text-center mt-4">
           <p className="mb-0">
-            <Link to="/login" style={{ color: '#e94560', fontWeight: 600 }}>
+            <Link to="/login" style={{ color: 'var(--rojo)', fontWeight: 600 }}>
               Volver a iniciar sesión
             </Link>
           </p>

@@ -66,7 +66,7 @@ function Login() {
             <div className="text-end mt-2">
               <Link
                 to="/olvide-contrasena"
-                style={{ color: '#e94560', fontSize: '0.9rem' }}
+                style={{ color: 'var(--rojo)', fontSize: '0.9rem' }}
               >
                 ¿Olvidaste tu contraseña?
               </Link>
@@ -92,7 +92,7 @@ function Login() {
         <div className="text-center mt-4">
           <p className="mb-0">
             ¿No tienes cuenta?{' '}
-            <Link to="/register" style={{ color: '#e94560', fontWeight: 600 }}>
+            <Link to="/register" style={{ color: 'var(--rojo)', fontWeight: 600 }}>
               Regístrate aquí
             </Link>
           </p>

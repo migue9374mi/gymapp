@@ -21,12 +21,12 @@ function calcularIMC(peso, alturaCm) {
 // BMI categories according to WHO
 function categoriaIMC(imc) {
   const valor = parseFloat(imc);
-  if (valor < 18.5) return { categoria: 'Bajo peso', color: '#74b9ff' };
-  if (valor < 25) return { categoria: 'Peso normal', color: '#00b894' };
-  if (valor < 30) return { categoria: 'Sobrepeso', color: '#fdcb6e' };
-  if (valor < 35) return { categoria: 'Obesidad grado I', color: '#e17055' };
-  if (valor < 40) return { categoria: 'Obesidad grado II', color: '#d63031' };
-  return { categoria: 'Obesidad grado III', color: '#d63031' };
+  if (valor < 18.5) return { categoria: 'Bajo peso', color: '#2438ff' };
+  if (valor < 25) return { categoria: 'Peso normal', color: '#1a7f4b' };
+  if (valor < 30) return { categoria: 'Sobrepeso', color: '#8a6b00' };
+  if (valor < 35) return { categoria: 'Obesidad grado I', color: '#d92c3d' };
+  if (valor < 40) return { categoria: 'Obesidad grado II', color: '#ff3b4e' };
+  return { categoria: 'Obesidad grado III', color: '#ff3b4e' };
 }
 
 // Get latest body measurements

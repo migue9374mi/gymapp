@@ -129,7 +129,7 @@ export default function Fotos() {
   return (
     <div className="container py-4">
       <div className="mb-4">
-        <h1 className="fw-bold" style={{ color: '#1a1a2e' }}>Fotos de progreso</h1>
+        <h1 className="fw-bold" style={{ color: 'var(--tinta)' }}>Fotos de progreso</h1>
         <p className="text-muted">Sube tus fotos para ver los cambios con el tiempo</p>
       </div>
 

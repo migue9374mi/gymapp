@@ -98,13 +98,13 @@ export default function Medidas() {
     const prev = anterior.medidas.find((m) => m.musculo === musculo)
     if (!actual || !prev) return null
     const diff = actual.valor - prev.valor
-    return { diff: diff.toFixed(1), color: diff > 0 ? '#00b894' : diff < 0 ? '#e94560' : '#6c757d' }
+    return { diff: diff.toFixed(1), color: diff > 0 ? 'var(--verde)' : diff < 0 ? 'var(--rojo)' : 'var(--gris)' }
   }
 
   return (
     <div className="container py-4">
       <div className="mb-4">
-        <h1 className="fw-bold" style={{ color: '#1a1a2e' }}>Medidas e IMC</h1>
+        <h1 className="fw-bold" style={{ color: 'var(--tinta)' }}>Medidas e IMC</h1>
         <p className="text-muted">Registra tu peso, altura y medidas corporales para ver tu evolucion</p>
       </div>
 
@@ -120,19 +120,19 @@ export default function Medidas() {
 
           <div className="row g-3">
             <div className="col-md-3 col-6">
-              <div className="text-center p-3 rounded" style={{ background: '#f8f9fa' }}>
+              <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
                 <div className="fs-3 fw-bold text-primary">{ultima.peso} kg</div>
                 <small className="text-muted">Peso</small>
               </div>
             </div>
             <div className="col-md-3 col-6">
-              <div className="text-center p-3 rounded" style={{ background: '#f8f9fa' }}>
+              <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
                 <div className="fs-3 fw-bold text-info">{ultima.altura} cm</div>
                 <small className="text-muted">Altura</small>
               </div>
             </div>
             <div className="col-md-3 col-6">
-              <div className="text-center p-3 rounded" style={{ background: '#f8f9fa' }}>
+              <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
                 <div className="fs-3 fw-bold" style={{ color: ultima.categoria.color }}>
                   {ultima.imc}
                 </div>
@@ -158,7 +158,7 @@ export default function Medidas() {
                   const label = MUSCULOS.find((x) => x.id === m.musculo)?.label || m.musculo
                   return (
                     <div key={m.id} className="col-md-3 col-6">
-                      <div className="d-flex justify-content-between p-2 rounded" style={{ background: '#f8f9fa' }}>
+                      <div className="d-flex justify-content-between p-2 rounded" style={{ background: 'var(--papel-hondo)' }}>
                         <span className="text-muted">{label}</span>
                         <span className="fw-semibold">
                           {m.valor} cm

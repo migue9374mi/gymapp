@@ -94,7 +94,7 @@ export default function Plan() {
   return (
     <div className="container py-4">
       <div className="mb-4">
-        <h1 className="fw-bold" style={{ color: '#1a1a2e' }}>Mi Plan Semanal</h1>
+        <h1 className="fw-bold" style={{ color: 'var(--tinta)' }}>Mi Plan Semanal</h1>
         <p className="text-muted">
           Asigna tus rutinas a los dias de la semana. Completa toda la semana para sumar a tu racha.
         </p>
@@ -205,7 +205,7 @@ export default function Plan() {
                           <div
                             key={r.plan_id}
                             className="d-flex justify-content-between align-items-center p-2 rounded"
-                            style={{ background: '#f8f9fa' }}
+                            style={{ background: 'var(--papel-hondo)' }}
                           >
                             <div className="flex-grow-1">
                               <div className="fw-semibold small">{r.nombre}</div>

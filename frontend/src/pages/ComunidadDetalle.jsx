@@ -124,7 +124,7 @@ export default function ComunidadDetalle() {
             <span className={`badge bg-${COLOR_CATEGORIA[rutina.categoria] || 'secondary'} mb-2`}>
               {CATEGORIAS.find((c) => c.valor === rutina.categoria)?.label || rutina.categoria}
             </span>
-            <h2 className="fw-bold mb-1" style={{ color: '#1a1a2e' }}>{rutina.nombre}</h2>
+            <h2 className="fw-bold mb-1" style={{ color: 'var(--tinta)' }}>{rutina.nombre}</h2>
             <p className="text-muted mb-3">
               <i className="bi bi-person me-1"></i>Creada por <strong>{rutina.autor}</strong>
               {esMia && <span className="badge bg-info ms-2">Esta es tu rutina</span>}
@@ -222,7 +222,7 @@ export default function ComunidadDetalle() {
                   <div key={c.id} className="d-flex gap-2">
                     <div
                       className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                      style={{ width: '36px', height: '36px', background: '#e94560' }}
+                      style={{ width: '36px', height: '36px', background: 'var(--rojo)' }}
                     >
                       {c.autor.charAt(0).toUpperCase()}
                     </div>

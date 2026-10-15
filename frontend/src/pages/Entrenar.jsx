@@ -221,7 +221,7 @@ useEffect(() => {
   return (
     <div className="container py-4">
       <div className="mb-4">
-        <h1 className="fw-bold" style={{ color: '#1a1a2e' }}>Entrenar</h1>
+        <h1 className="fw-bold" style={{ color: 'var(--tinta)' }}>Entrenar</h1>
         <p className="text-muted">
           Hoy es <strong>{DIAS[diaHoy]}</strong>. Registra tu entrenamiento y ajusta lo que necesites.
         </p>
@@ -243,7 +243,7 @@ useEffect(() => {
             ) : (
               <div className="d-flex flex-column gap-2">
                 {planHoy.rutinas.map((r) => (
-                  <div key={r.plan_id} className="d-flex justify-content-between align-items-center p-3 rounded" style={{ background: '#f8f9fa' }}>
+                  <div key={r.plan_id} className="d-flex justify-content-between align-items-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
                     <div>
                       <div className="fw-semibold">{r.nombre}</div>
                       <small className="text-muted">{r.categoria}</small>
@@ -298,7 +298,7 @@ useEffect(() => {
                 </button>
 
                 {mostrarExtra && (
-                  <form onSubmit={handleAnadirExtra} className="p-3 rounded mt-3" style={{ background: '#fff3e0' }}>
+                  <form onSubmit={handleAnadirExtra} className="p-3 rounded mt-3" style={{ background: 'var(--crema)' }}>
                     <h6 className="fw-bold mb-2" style={{ fontSize: '0.85rem' }}>
                       <i className="bi bi-plus-circle me-1"></i>Añadir solo hoy
                     </h6>

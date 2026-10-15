@@ -189,7 +189,7 @@ export default function RutinaDetalle() {
               <span className={`badge bg-${COLOR_CATEGORIA[rutina.categoria] || 'secondary'} mb-2`}>
                 {CATEGORIAS.find((c) => c.valor === rutina.categoria)?.label || rutina.categoria}
               </span>
-              <h2 className="fw-bold mb-1" style={{ color: '#1a1a2e' }}>{rutina.nombre}</h2>
+              <h2 className="fw-bold mb-1" style={{ color: 'var(--tinta)' }}>{rutina.nombre}</h2>
               <p className="text-muted mb-0">{rutina.descripcion || 'Sin descripción'}</p>
             </div>
             <button className="btn btn-outline-primary" onClick={() => setEditando(true)}>
@@ -200,15 +200,15 @@ export default function RutinaDetalle() {
           {rutina.ejercicios.length > 0 && (
             <div className="row g-3 mt-2 pt-3 border-top">
               <div className="col-4 text-center">
-                <div className="fw-bold fs-4" style={{ color: '#e94560' }}>{rutina.ejercicios.length}</div>
+                <div className="fw-bold fs-4" style={{ color: 'var(--rojo)' }}>{rutina.ejercicios.length}</div>
                 <div className="small text-muted">Ejercicios</div>
               </div>
               <div className="col-4 text-center">
-                <div className="fw-bold fs-4" style={{ color: '#00b894' }}>{totalSeries}</div>
+                <div className="fw-bold fs-4" style={{ color: 'var(--verde)' }}>{totalSeries}</div>
                 <div className="small text-muted">Series totales</div>
               </div>
               <div className="col-4 text-center">
-                <div className="fw-bold fs-4" style={{ color: '#0984e3' }}>{volumenEstimado.toLocaleString()}</div>
+                <div className="fw-bold fs-4" style={{ color: 'var(--azul)' }}>{volumenEstimado.toLocaleString()}</div>
                 <div className="small text-muted">Volumen (kg)</div>
               </div>
             </div>

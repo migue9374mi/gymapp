@@ -34,7 +34,7 @@ export default function Dashboard() {
   return (
     <div className="container py-5">
       <div className="mb-4">
-        <h1 className="fw-bold" style={{ color: '#1a1a2e' }}>¡Hola, {user?.nombre}! 👋</h1>
+        <h1 className="fw-bold" style={{ color: 'var(--tinta)' }}>¡Hola, {user?.nombre}! 👋</h1>
         <p className="text-muted">Este es tu resumen de entrenamiento</p>
       </div>
 

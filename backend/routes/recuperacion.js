@@ -169,34 +169,48 @@ router.post('/olvide-contrasena', async (req, res) => {
 });
 
 function correoHtml(nombre, enlace, minutos) {
+  /*
+    El correo lleva el mismo aspecto que la app: fondo de papel, bordes
+    negros gruesos, esquinas rectas y el rojo de la marca.
+
+    En un correo no se puede meter una hoja de estilos externa, asi que todo
+    va en linea. Aun asi, el navegador del correo respeta casi todo: lo unico
+    que se pierde en Outlook es la sombra, y ahi el borde negro ya hace el
+    trabajo de marcar el boton.
+  */
   return `<!DOCTYPE html>
 <html lang="es">
-  <body style="margin:0;padding:24px;background:#f4f4f7;font-family:Arial,Helvetica,sans-serif;color:#1a1a2e">
-    <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden">
-      <div style="background:#1a1a2e;padding:26px;text-align:center">
-        <span style="color:#e63960;font-size:26px;font-weight:bold">GymApp</span>
+  <body style="margin:0;padding:24px;background:#f7f4ec;font-family:'Helvetica Neue',Arial,Helvetica,sans-serif;color:#0d0d0d">
+    <div style="max-width:520px;margin:0 auto;background:#ffffff;border:3px solid #0d0d0d;box-shadow:6px 6px 0 #0d0d0d">
+      <div style="background:#0d0d0d;padding:22px 26px;text-align:center;border-bottom:4px solid #ff3b4e">
+        <span style="color:#ff3b4e;font-size:28px;font-weight:900;letter-spacing:-0.5px">GYMAPP</span>
       </div>
       <div style="padding:30px">
-        <p style="margin:0 0 18px">Hola ${nombre},</p>
-        <p style="margin:0 0 18px">
-          Alguien (espero que seas tu) ha pedido cambiar la contraseña de tu cuenta.
+        <p style="margin:0 0 20px;font-size:13px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#6b6b6b">
+          Recuperar contraseña
+        </p>
+        <p style="margin:0 0 16px;font-size:18px;font-weight:700">Hola ${nombre},</p>
+        <p style="margin:0 0 24px;line-height:1.6">
+          Alguien (espero que seas tú) ha pedido cambiar la contraseña de tu cuenta.
           Pulsa el botón para poner una nueva.
         </p>
-        <p style="text-align:center;margin:0 0 24px">
-          <a href="${enlace}" style="background:#e63960;color:#fff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:bold;display:inline-block">
-            Cambiar mi contraseña
+        <p style="text-align:center;margin:0 0 26px">
+          <a href="${enlace}" style="background:#ff3b4e;color:#ffffff;text-decoration:none;padding:15px 30px;border:3px solid #0d0d0d;box-shadow:4px 4px 0 #0d0d0d;font-weight:700;display:inline-block">
+            CAMBIAR MI CONTRASEÑA
           </a>
         </p>
-        <p style="margin:0 0 8px;color:#666;font-size:13px">
-          El enlace vale ${minutos} minutos y solo se puede usar una vez.
-        </p>
-        <p style="margin:0;color:#666;font-size:13px">
-          Si el botón no funciona, copia esta direccion en el navegador:<br>
-          <span style="word-break:break-all;color:#e63960">${enlace}</span>
-        </p>
-        <p style="margin:22px 0 0;color:#666;font-size:13px">
-          Si no has pedido esto, no hagas nada: tu contraseña sigue siendo la misma.
-        </p>
+        <div style="border-top:3px solid #0d0d0d;padding-top:18px">
+          <p style="margin:0 0 8px;color:#6b6b6b;font-size:13px;line-height:1.6">
+            El enlace vale ${minutos} minutos y solo se puede usar una vez.
+          </p>
+          <p style="margin:0;color:#6b6b6b;font-size:13px;line-height:1.6">
+            Si el botón no funciona, copia esta dirección en el navegador:<br>
+            <span style="word-break:break-all;color:#ff3b4e;font-weight:700">${enlace}</span>
+          </p>
+          <p style="margin:20px 0 0;padding:12px 14px;background:#fff7d6;border-left:6px solid #ffe600;color:#0d0d0d;font-size:13px;line-height:1.6">
+            Si no has pedido esto, no hagas nada: tu contraseña sigue siendo la misma.
+          </p>
+        </div>
       </div>
     </div>
   </body>

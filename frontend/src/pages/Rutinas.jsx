@@ -103,7 +103,7 @@ export default function Rutinas() {
     <div className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-          <h1 className="fw-bold mb-0" style={{ color: '#1a1a2e' }}>Mis Rutinas</h1>
+          <h1 className="fw-bold mb-0" style={{ color: 'var(--tinta)' }}>Mis Rutinas</h1>
           <p className="text-muted mb-0">Crea y gestiona tus rutinas de entrenamiento</p>
         </div>
         <button className="btn btn-primary" onClick={() => setMostrarForm(!mostrarForm)}>

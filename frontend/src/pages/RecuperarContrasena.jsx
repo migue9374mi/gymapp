@@ -162,7 +162,7 @@ export default function RecuperarContrasena() {
         )}
 
         <div className="text-center mt-4">
-          <Link to="/login" style={{ color: '#e94560', fontWeight: 600 }}>
+          <Link to="/login" style={{ color: 'var(--rojo)', fontWeight: 600 }}>
             Volver a iniciar sesión
           </Link>
         </div>

@@ -123,7 +123,7 @@ function Register() {
         <div className="text-center mt-4">
           <p className="mb-0">
             ¿Ya tienes cuenta?{' '}
-            <Link to="/login" style={{ color: '#e94560', fontWeight: 600 }}>
+            <Link to="/login" style={{ color: 'var(--rojo)', fontWeight: 600 }}>
               Inicia sesión aquí
             </Link>
           </p>

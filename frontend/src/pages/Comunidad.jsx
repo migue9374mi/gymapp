@@ -58,7 +58,7 @@ export default function Comunidad() {
   return (
     <div className="container py-4">
       <div className="mb-4">
-        <h1 className="fw-bold" style={{ color: '#1a1a2e' }}>Comunidad</h1>
+        <h1 className="fw-bold" style={{ color: 'var(--tinta)' }}>Comunidad</h1>
         <p className="text-muted">
           Rutinas compartidas por otros usuarios. Copia las que te gusten a tu cuenta.
         </p>

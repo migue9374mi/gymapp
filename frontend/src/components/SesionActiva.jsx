@@ -14,9 +14,9 @@ function leerSesionActiva() {
 }
 
 const COLOR_ESTADO = {
-  rojo: '#dc3545',
-  amarillo: '#ffc107',
-  verde: '#28a745',
+  rojo: 'var(--rojo)',
+  amarillo: 'var(--ambar)',
+  verde: 'var(--verde)',
 }
 
 const ETIQUETA_ESTADO = {
@@ -124,7 +124,7 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
       {/* Cronometro */}
       <div
         className="d-flex justify-content-between align-items-center p-3 rounded mb-3"
-        style={{ background: '#1a1a2e', color: 'white' }}
+        style={{ background: 'var(--tinta)', color: 'white' }}
       >
         <div>
           <div className="small" style={{ opacity: 0.7 }}>Tiempo transcurrido</div>
@@ -158,7 +158,7 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
 
       {/* Ejercicio seleccionado: input de peso */}
       {ejercicioSel && (
-        <div className="p-3 rounded mb-3" style={{ background: '#fff3e0', border: '2px solid #e94560' }}>
+        <div className="p-3 rounded mb-3" style={{ background: 'var(--crema)', border: '2px solid var(--rojo)' }}>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <strong>{ejercicioSel.nombre}</strong>
             <button className="btn btn-sm btn-outline-secondary" onClick={() => setEjercicioSel(null)}>
@@ -222,7 +222,7 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
               className="d-flex justify-content-between align-items-center p-3 rounded border"
               style={{
                 borderLeft: `5px solid ${COLOR_ESTADO[ej.estado]}`,
-                background: ejercicioSel?.id === ej.id ? '#f8f9fa' : 'white',
+                background: ejercicioSel?.id === ej.id ? 'var(--papel-hondo)' : 'white',
                 cursor: 'pointer',
               }}
               onClick={() => setEjercicioSel(ej)}

@@ -157,7 +157,7 @@ export default function FondoUsuario() {
             className="rounded overflow-hidden border d-flex align-items-center justify-content-center"
             style={{
               height: '160px',
-              background: fondoActual || vistaPrevia ? '#1a1a2e' : '#f1f3f5',
+              background: fondoActual || vistaPrevia ? 'var(--tinta)' : 'var(--papel-hondo)',
             }}
           >
             {vistaPrevia || fondoActual ? (

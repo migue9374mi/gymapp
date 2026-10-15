@@ -1,0 +1,949 @@
+/* ==============================================================
+   ESTILO 1 — PAPEL + NEO-BRUTALISMO
+   ----------------------------------------------------------------
+   Este archivo va POR ENCIMA de Bootstrap y de index.css. No ha
+   hecho falta tocar ni un .jsx: aqui se redibujan las clases que
+   ya usaba la app.
+
+   LAS CINCO REGLAS DEL ESTILO
+     1. Papel crema de fondo, con un punto muy tenue cada 22 px
+     2. Bordes negros de 3 px en todo lo que sea caja
+     3. Sombras DURA, sin difuminar: 4px 4px 0 negro
+     4. Esquinas siempre rectas
+     5. Al pulsar, los botones se hunden y la sombra desaparece
+
+   Los degradados de Bootstrap se quitan todos: en este estilo el
+   color es macizo o no es color.
+
+   PARA VOLVER ATRAS: basta con borrar el 'import' de esta linea
+   en main.jsx. index.css sigue intacto debajo.
+   ============================================================== */
+
+/* ---------- Las tipografias van dentro del proyecto ---------- */
+
+@font-face {
+  font-family: 'Archivo Black';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fuentes/archivo-black-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Archivo Black';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fuentes/archivo-black-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fuentes/space-grotesk-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fuentes/space-grotesk-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---------- Los colores ---------- */
+
+:root {
+  /* el papel y sus tonos */
+  --papel: #f7f4ec;
+  --papel-hondo: #eae6db; /* cajas hundidas, un pelo mas oscuras que el papel */
+  --tinta: #0d0d0d;
+
+  /* los colores */
+  --rojo: #ff3b4e;
+  --amarillo: #ffe600;
+  --ambar: #ffc107; /* el amarillo de los estados de ejercicio */
+  --verde: #1a7f4b;
+  --azul: #2438ff;
+  --crema: #fff7d6;
+  --blanco: #ffffff;
+  --gris: #6b6b6b;
+
+  /* lo que usa Bootstrap, TRADUCIDO al estilo */
+  --bs-body-bg: var(--papel);
+  --bs-body-color: var(--tinta);
+  --bs-body-font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  --bs-border-color: var(--tinta);
+
+  --bs-primary: var(--rojo);
+  --bs-primary-rgb: 255, 59, 78;
+  --bs-secondary: var(--gris);
+  --bs-success: #1a7f4b;
+  --bs-danger: var(--rojo);
+  --bs-warning: #b8860b;
+  --bs-info: #2438ff;
+  --bs-light: var(--papel);
+  --bs-dark: var(--tinta);
+
+  /* Atajos que usa este archivo */
+  --borde: 3px solid var(--tinta);
+  --sombra: 4px 4px 0 var(--tinta);
+  --sombra-grande: 6px 6px 0 var(--tinta);
+}
+
+/* ---------- El papel de fondo ---------- */
+
+body {
+  font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  color: var(--tinta);
+  background-color: var(--papel);
+  /* Un punto muy tenue, como el papel de una libreta */
+  background-image: radial-gradient(circle at 1px 1px, rgba(13, 13, 13, 0.045) 1px, transparent 0);
+  background-size: 22px 22px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Los titulos de la app: Archivo Black, en mayusculas, muy apretadas */
+h1, h2, h3, h4, h5, h6,
+.fs-1, .fs-2, .fs-3, .fs-4, .fs-5, .fs-6 {
+  font-family: 'Archivo Black', 'Space Grotesk', sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+/* Los numeros grandes: siempre con cifras de ancho fijo, para que
+   no bailen al cambiar de 9 a 100 */
+.stat-card h3,
+.fs-1, .fs-2, .fs-3 {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==============================================================
+   FOTO DE FONDO DEL USUARIO
+   ----------------------------------------------------------------
+   Aqui se aparta un poco del estilo: con foto, las tarjetas pasan
+   a ser OPACAS en vez de cristal, y se mantiene el borde negro.
+   Asi la foto se ve como un marco de fondo y no estorba el texto.
+   ============================================================== */
+
+body.con-fondo {
+  /* Con foto, el papel no se ve: se deja la imagen limpia */
+  background-image: none;
+}
+
+body.con-fondo .dashboard-card,
+body.con-fondo .card,
+body.con-fondo .auth-card {
+  /* Opacas, no translucidas. El texto siempre se lee. */
+  background: var(--blanco) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  /* El marco se mantiene, para que no se pierda el estilo */
+  border: var(--borde) !important;
+  box-shadow: var(--sombra) !important;
+}
+
+body.con-fondo .fondo-velo {
+  /* Velo mas claro que antes, porque las tarjetas ya son opacas
+     y no hace falta tanta oscuridad para que el texto se lea */
+  background: rgba(13, 13, 13, 0.45);
+}
+
+/* ==============================================================
+   CAJAS: tarjetas, paneles
+   ============================================================== */
+
+.card,
+.dashboard-card {
+  background: var(--blanco);
+  border: var(--borde);
+  border-radius: 0;
+  box-shadow: var(--sombra);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.card:hover,
+.dashboard-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--sombra-grande);
+}
+
+.card-body {
+  padding: 20px;
+}
+
+/* ---------- Los cuatro numeros del panel ---------- */
+
+.stat-card {
+  border: var(--borde);
+  border-radius: 0;
+  box-shadow: var(--sombra);
+  padding: 20px;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.stat-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--sombra-grande);
+}
+
+/* Sin degradados: en este estilo el color es macizo */
+.stat-card.primary { background: var(--rojo); }
+.stat-card.success { background: #1a7f4b; }
+.stat-card.info    { background: #2438ff; }
+.stat-card.warning { background: var(--amarillo); color: var(--tinta); }
+
+.stat-card h3 {
+  font-size: 2rem;
+  margin-bottom: 4px;
+}
+
+.stat-card p {
+  margin: 0;
+  font-weight: 600;
+  /* Etiqueta pequena, en mayusculas y espaciada */
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* El amarillo lleva texto oscuro, para que se lea */
+.stat-card.warning h3,
+.stat-card.warning p {
+  color: var(--tinta);
+}
+
+/* ---------- La insignia de racha ---------- */
+
+.racha-badge {
+  background: var(--amarillo);
+  color: var(--tinta);
+  border: var(--borde);
+  border-radius: 0;
+  box-shadow: var(--sombra);
+  padding: 8px 14px;
+  font-weight: 700;
+  font-family: 'Archivo Black', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Pie de pagina ---------- */
+
+.footer {
+  background: var(--tinta);
+  color: #fff;
+  border-top: 5px solid var(--rojo);
+  padding: 26px 0;
+  font-weight: 500;
+}
+
+/* ==============================================================
+   BOTONES: se hunden al pulsarlos
+   ============================================================== */
+
+.btn {
+  border: var(--borde);
+  border-radius: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  padding: 10px 20px;
+  box-shadow: var(--sombra);
+  transition: transform 0.07s, box-shadow 0.07s, background-color 0.07s;
+}
+
+.btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--sombra-grande);
+}
+
+/* Al pulsar se hunde: la sombra desaparece y entra dentro */
+.btn:active,
+.btn:focus-visible:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 var(--tinta);
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--tinta);
+  outline-offset: 2px;
+}
+
+.btn-sm { padding: 6px 13px; font-size: 0.83rem; }
+.btn-lg { padding: 14px 28px; font-size: 1.02rem; }
+
+/* ---------- Los colores de boton ---------- */
+
+.btn-primary {
+  background: var(--rojo);
+  border-color: var(--tinta);
+  color: #fff;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--rojo);
+  border-color: var(--tinta);
+  color: #fff;
+}
+
+.btn-success {
+  background: #1a7f4b;
+  border-color: var(--tinta);
+  color: #fff;
+}
+.btn-success:hover { background: #145c37; color: #fff; }
+
+.btn-danger {
+  background: var(--rojo);
+  border-color: var(--tinta);
+  color: #fff;
+}
+.btn-danger:hover { background: #d92c3d; color: #fff; }
+
+.btn-warning {
+  background: var(--amarillo);
+  border-color: var(--tinta);
+  color: var(--tinta);
+}
+.btn-warning:hover { background: #f0d400; color: var(--tinta); }
+
+.btn-light {
+  background: var(--blanco);
+  border-color: var(--tinta);
+  color: var(--tinta);
+}
+.btn-light:hover { background: var(--papel); color: var(--tinta); }
+
+.btn-secondary {
+  background: #d9d5ca;
+  border-color: var(--tinta);
+  color: var(--tinta);
+}
+.btn-secondary:hover { background: #c4bfb1; color: var(--tinta); }
+
+.btn-dark {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: #fff;
+}
+.btn-dark:hover { background: #2a2a2a; color: #fff; }
+
+/* ---------- Los botones de solo borde ---------- */
+
+.btn-outline-primary {
+  border: var(--borde);
+  box-shadow: var(--sombra);
+  color: var(--tinta);
+  background: var(--blanco);
+}
+.btn-outline-primary:hover {
+  background: var(--rojo);
+  border-color: var(--tinta);
+  color: #fff;
+}
+
+.btn-outline-danger {
+  border: var(--borde);
+  box-shadow: var(--sombra);
+  color: var(--tinta);
+  background: var(--blanco);
+}
+.btn-outline-danger:hover {
+  background: var(--rojo);
+  border-color: var(--tinta);
+  color: #fff;
+}
+
+.btn-outline-success {
+  border: var(--borde);
+  box-shadow: var(--sombra);
+  color: var(--tinta);
+  background: var(--blanco);
+}
+.btn-outline-success:hover {
+  background: #1a7f4b;
+  border-color: var(--tinta);
+  color: #fff;
+}
+
+.btn-outline-secondary {
+  border: var(--borde);
+  box-shadow: var(--sombra);
+  color: var(--tinta);
+  background: var(--blanco);
+}
+.btn-outline-secondary:hover {
+  background: #d9d5ca;
+  border-color: var(--tinta);
+  color: var(--tinta);
+}
+
+.btn-link {
+  color: var(--tinta);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-decoration-color: var(--rojo);
+  text-underline-offset: 3px;
+  border: none;
+  box-shadow: none;
+}
+.btn-link:hover { color: var(--rojo); }
+
+/* Boton apagado: se nota que no se puede pulsar */
+.btn:disabled,
+.btn.disabled,
+.btn[disabled] {
+  background: #ddd9cf;
+  border-color: #9a968d;
+  color: #9a968d;
+  box-shadow: 3px 3px 0 #9a968d;
+  opacity: 1;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ---------- El boton de la barra de navegacion ---------- */
+
+.navbar-toggler {
+  border: var(--borde);
+  border-radius: 0;
+  box-shadow: var(--sombra);
+}
+.navbar-toggler-icon {
+  background-image: none;
+}
+.navbar-toggler-icon::after {
+  content: '\F479';
+  font-family: 'bootstrap-icons';
+  font-size: 1.4rem;
+  color: var(--tinta);
+  display: block;
+  line-height: 1;
+}
+
+/* ==============================================================
+   CAMPOS DE TEXTO
+   ============================================================== */
+
+.form-control,
+.form-select {
+  border: var(--borde);
+  border-radius: 0;
+  background: var(--blanco);
+  padding: 11px 13px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--tinta);
+  /* Al escribir, la caja se pone amarilla: se ve donde estas sin
+     necesitar un cursor parpadeando */
+  background: #fffbd0;
+  box-shadow: 4px 4px 0 var(--tinta);
+  outline: none;
+}
+
+.form-control::placeholder { color: #a8a49b; }
+
+.form-control-sm {
+  padding: 6px 10px;
+  font-size: 0.86rem;
+}
+
+.form-control-lg {
+  padding: 14px 16px;
+  font-size: 1.06rem;
+}
+
+/* El desplegable: la flecha de Bootstrap es una foto, y con el borde
+   negro al lado parece que no encaja */
+.form-select {
+  background-image: none;
+  padding-right: 34px;
+}
+.form-select:focus { background-image: none; }
+
+/* Etiquetas de los campos */
+.form-label {
+  font-weight: 700;
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tinta);
+  margin-bottom: 6px;
+}
+
+/* Casillas y botones de radio */
+.form-check-input {
+  border: 2px solid var(--tinta);
+  border-radius: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 0.15em;
+}
+.form-check-input:checked {
+  background-color: var(--rojo);
+  border-color: var(--tinta);
+}
+.form-check-input:focus {
+  border-color: var(--tinta);
+  box-shadow: 0 0 0 3px rgba(255, 59, 78, 0.3);
+}
+
+.form-check-label { font-weight: 600; }
+.form-switch .form-check-input { width: 44px; }
+
+/*
+  Etiqueta pegada a un campo (los nombres de las medidas corporales).
+  Van en tono papel, no en amarillo: son doce seguidas y en amarillo
+  era un muro que tapaba los propios campos.
+*/
+.input-group-text {
+  background: var(--papel-hondo);
+  border: var(--borde);
+  border-radius: 0;
+  color: var(--tinta);
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 8px 10px;
+}
+
+/* El deslizador de la intensidad del fondo */
+.form-range::-webkit-slider-runnable-track {
+  background: var(--blanco);
+  border: 2px solid var(--tinta);
+  height: 8px;
+}
+.form-range::-moz-range-track {
+  background: var(--blanco);
+  border: 2px solid var(--tinta);
+  height: 8px;
+}
+.form-range::-webkit-slider-thumb {
+  background: var(--rojo);
+  border: 2px solid var(--tinta);
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
+}
+.form-range::-moz-range-thumb {
+  background: var(--rojo);
+  border: 2px solid var(--tinta);
+  border-radius: 0;
+  width: 20px;
+  height: 20px;
+}
+
+/* ==============================================================
+   AVISOS
+   ============================================================== */
+
+.alert {
+  border: var(--borde);
+  border-left-width: 10px;
+  border-radius: 0;
+  box-shadow: var(--sombra);
+  font-weight: 500;
+  padding: 15px 18px;
+}
+
+.alert-success {
+  background: #e6f5ec;
+  border-color: var(--tinta);
+  color: #0f4d2e;
+}
+.alert-danger {
+  background: #ffe4e7;
+  border-color: var(--tinta);
+  color: #8c1421;
+}
+.alert-warning {
+  background: #fff7d6;
+  border-color: var(--tinta);
+  color: #6b5200;
+}
+.alert-info {
+  background: #e5e9ff;
+  border-color: var(--tinta);
+  color: #16209c;
+}
+
+/* ==============================================================
+   LA BARRA DE NAVEGACION
+   ============================================================== */
+
+.navbar {
+  background: var(--tinta);
+  border-bottom: 5px solid var(--rojo);
+  box-shadow: none;
+  padding: 0;
+}
+
+.navbar-brand {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.45rem;
+  color: var(--rojo) !important;
+  letter-spacing: -0.03em;
+  padding: 16px 22px;
+}
+
+.nav-link {
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 18px 15px;
+  border-left: 1px solid #2a2a2a;
+  transition: background 0.1s;
+}
+
+.nav-link:hover {
+  color: var(--rojo) !important;
+  background: #1c1c1c;
+}
+
+.nav-link.active {
+  background: var(--rojo);
+  color: #fff !important;
+}
+
+.navbar .text-white,
+.navbar .navbar-text { color: rgba(255, 255, 255, 0.75) !important; }
+
+.navbar .dropdown-menu {
+  border: var(--borde);
+  border-radius: 0;
+  box-shadow: var(--sombra);
+  background: var(--blanco);
+}
+
+.navbar .dropdown-item {
+  font-weight: 600;
+  border-radius: 0;
+}
+.navbar .dropdown-item:hover {
+  background: var(--amarillo);
+  color: var(--tinta);
+}
+.navbar .dropdown-item:active {
+  background: var(--rojo);
+  color: #fff;
+}
+
+.navbar .dropdown-divider { border-color: var(--tinta); opacity: 0.25; }
+.navbar .dropdown-item-text { color: var(--gris); font-weight: 500; }
+
+/* ==============================================================
+   ETIQUETAS PEQUENAS
+   ============================================================== */
+
+.badge {
+  border: 2px solid var(--tinta);
+  border-radius: 0;
+  font-weight: 700;
+  font-size: 0.62rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  padding: 5px 9px;
+}
+
+.text-bg-primary { background: var(--rojo) !important; color: #fff; }
+.text-bg-success { background: #1a7f4b !important; color: #fff; }
+.text-bg-danger  { background: var(--rojo) !important; color: #fff; }
+.text-bg-warning { background: var(--amarillo) !important; color: var(--tinta); }
+.text-bg-info    { background: #2438ff !important; color: #fff; }
+.text-bg-dark    { background: var(--tinta) !important; color: #fff; }
+.text-bg-secondary { background: #d9d5ca !important; color: var(--tinta); }
+
+.badge.bg-primary { background: var(--rojo) !important; color: #fff; }
+.badge.bg-success { background: #1a7f4b !important; color: #fff; }
+.badge.bg-danger  { background: var(--rojo) !important; color: #fff; }
+.badge.bg-warning { background: var(--amarillo) !important; color: var(--tinta); }
+.badge.bg-info    { background: #2438ff !important; color: #fff; }
+.badge.bg-dark    { background: var(--tinta) !important; color: #fff; }
+.badge.bg-secondary { background: #d9d5ca !important; color: var(--tinta); }
+
+/* ==============================================================
+   TABLAS Y LISTAS
+   ============================================================== */
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--tinta);
+  --bs-table-border-color: var(--tinta);
+  border-collapse: collapse;
+  font-weight: 500;
+}
+
+.table > :not(caption) > * > * {
+  padding: 13px 14px;
+  border-bottom-width: 2px;
+  border-color: var(--tinta);
+}
+
+.table thead th {
+  border-bottom-width: 3px;
+  font-family: 'Archivo Black', sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 0.8rem;
+}
+
+.table-hover > tbody > tr:hover > * {
+  background: #fffbd0;
+  color: var(--tinta);
+}
+
+.list-group {
+  border-radius: 0;
+  border: var(--borde);
+  box-shadow: var(--sombra);
+}
+
+.list-group-item {
+  background: var(--blanco);
+  border-color: var(--tinta);
+  padding: 14px 16px;
+  font-weight: 500;
+}
+
+.list-group-item:hover {
+  background: #fffbd0;
+  color: var(--tinta);
+}
+
+.list-group-item.active {
+  background: var(--rojo);
+  border-color: var(--tinta);
+  color: #fff;
+}
+
+/* ==============================================================
+   VENTANAS EMERGENTES
+   ============================================================== */
+
+.modal-content {
+  border: 4px solid var(--tinta);
+  border-radius: 0;
+  box-shadow: 10px 10px 0 var(--tinta);
+  background: var(--blanco);
+}
+
+.modal-header,
+.modal-footer {
+  border-color: var(--tinta);
+  padding: 18px 22px;
+}
+
+.modal-title {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.modal-body { padding: 22px; }
+
+.btn-close {
+  border-radius: 0;
+  border: 2px solid var(--tinta);
+  background-size: 60%;
+  opacity: 1;
+}
+
+/* El fondo oscuro que pone Bootstrap, para que encaje con el papel */
+.modal-backdrop.show {
+  background: rgba(13, 13, 13, 0.72);
+}
+
+/* ==============================================================
+   PANTALLAS DE ENTRADA
+   ============================================================== */
+
+.auth-container {
+  background: var(--tinta);
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+  background-size: 22px 22px;
+  padding: 26px 20px;
+}
+
+.auth-card {
+  background: var(--blanco);
+  border: 4px solid var(--tinta);
+  border-radius: 0;
+  box-shadow: 10px 10px 0 var(--rojo);
+  padding: 34px;
+  max-width: 450px;
+}
+
+.auth-card h2 {
+  color: var(--tinta);
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.auth-card .subtitle {
+  color: var(--gris);
+  font-weight: 500;
+  margin-bottom: 28px;
+}
+
+/* ==============================================================
+   LO QUE SE TOCA AL PULSAR, Y EL CURSOR
+   ============================================================== */
+
+a { color: var(--tinta); }
+a:hover { color: var(--rojo); }
+
+.btn, .nav-link, .dropdown-item, .form-control, .form-select,
+.list-group-item, .card, button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ==============================================================
+   LO QUE SE VE MAL Y HAY QUE ARREGLAR
+   ============================================================== */
+
+/* Los degradados de Bootstrap que se hayan colado */
+.bg-primary { background-color: var(--rojo) !important; }
+.bg-success { background-color: #1a7f4b !important; color: #fff; }
+.bg-danger  { background-color: var(--rojo) !important; color: #fff; }
+.bg-warning { background-color: var(--amarillo) !important; color: var(--tinta); }
+.bg-info    { background-color: #2438ff !important; color: #fff; }
+.bg-dark    { background-color: var(--tinta) !important; color: #fff; }
+.bg-light   { background-color: #eae6db !important; color: var(--tinta); }
+.bg-secondary { background-color: #d9d5ca !important; color: var(--tinta); }
+
+/* El texto de colores, para que resalte y no parezca un enlace normal */
+.text-primary, .text-primary:hover { color: var(--rojo) !important; }
+.text-success, .text-success:hover { color: #1a7f4b !important; }
+.text-danger,  .text-danger:hover  { color: var(--rojo) !important; }
+.text-warning, .text-warning:hover { color: #8a6b00 !important; }
+.text-info,    .text-info:hover    { color: #2438ff !important; }
+.text-muted    { color: var(--gris) !important; }
+
+/* Las barras de progreso (rachas, objetivos) */
+.progress {
+  border: var(--borde);
+  border-radius: 0;
+  /* Relleno claro para que la parte vacia se lea como una barra
+     y no como un rayo suelto */
+  background: var(--papel-hondo);
+  height: 24px;
+}
+
+.progress-bar {
+  background: var(--rojo);
+  font-weight: 700;
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  border-right: 3px solid var(--tinta);
+}
+
+/* Una barra casi vacia no debe quedarse sin marcar nada */
+.progress-bar[style*="width: 0"],
+.progress-bar[style*="width:0%"] {
+  border-right: none;
+}
+
+/* Los separadores con borde */
+.border, .border-top, .border-bottom, .border-start, .border-end {
+  border-color: var(--tinta) !important;
+}
+.border { border-width: 3px !important; }
+.border-top, .border-bottom, .border-start, .border-end { border-width: 3px !important; }
+
+.border-0 { border: none !important; }
+.rounded { border-radius: 0 !important; }
+.rounded-circle { border-radius: 50% !important; }
+.rounded-0 { border-radius: 0 !important; }
+
+/* El circulito de la foto de perfil y los botones redondos sueltos */
+.rounded-circle {
+  border: var(--borde);
+  box-shadow: var(--sombra);
+}
+
+/* Los iconos de bootstrap */
+.bi { font-weight: 700; }
+
+/* El reloj girando mientras entrena */
+.spinner-border,
+.spinner-border-sm {
+  border-width: 3px;
+  border-radius: 0;
+  border-color: var(--tinta);
+  border-right-color: var(--rojo);
+}
+
+/* ==============================================================
+   PANTALLAS PEQUENAS (movil)
+   ----------------------------------------------------------------
+   En vertical, las cuatro metricas se ponen en dos filas y el menu
+   se recoge. Lo demas ya lo hace Bootstrap.
+   ============================================================== */
+
+@media (max-width: 575px) {
+  body { background-size: 18px 18px; }
+
+  .card,
+  .dashboard-card,
+  .stat-card {
+    box-shadow: 3px 3px 0 var(--tinta);
+  }
+
+  .btn { padding: 11px 16px; }
+
+  .auth-card {
+    padding: 26px 22px;
+    box-shadow: 6px 6px 0 var(--rojo);
+    border-width: 3px;
+  }
+
+  .stat-card h3 { font-size: 1.7rem; }
+
+  .modal-content { box-shadow: 6px 6px 0 var(--tinta); }
+
+  .nav-link { padding: 15px 12px; font-size: 0.85rem; }
+}
+
+/* Quien prefiera menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .card,
+  .dashboard-card,
+  .stat-card,
+  .form-control {
+    transition: none;
+  }
+  .btn:hover,
+  .card:hover,
+  .dashboard-card:hover,
+  .stat-card:hover {
+    transform: none;
+  }
+}

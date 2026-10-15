@@ -40,7 +40,7 @@ export default function Progreso() {
   return (
     <div className="container py-4">
       <div className="mb-4">
-        <h1 className="fw-bold" style={{ color: '#1a1a2e' }}>Mi Progreso</h1>
+        <h1 className="fw-bold" style={{ color: 'var(--tinta)' }}>Mi Progreso</h1>
         <p className="text-muted">Rachas, distribucion de entrenamiento y volumen por musculo</p>
       </div>
 
@@ -91,7 +91,7 @@ export default function Progreso() {
                       <span className="text-muted">{stats.nombresDias[i]}</span>
                       <span className="fw-semibold">{count}</span>
                     </div>
-                    <div className="progress" style={{ height: '8px' }}>
+                    <div className="progress">
                       <div
                         className="progress-bar bg-danger"
                         style={{ width: `${(count / maxDia) * 100}%` }}
@@ -114,7 +114,7 @@ export default function Progreso() {
                         <span className="text-muted text-capitalize">{m.musculo}</span>
                         <span className="fw-semibold">{Math.round(m.volumen).toLocaleString()} kg</span>
                       </div>
-                      <div className="progress" style={{ height: '8px' }}>
+                      <div className="progress">
                         <div
                           className="progress-bar bg-info"
                           style={{ width: `${(m.volumen / maxVolumen) * 100}%` }}
@@ -144,7 +144,7 @@ export default function Progreso() {
                 <h5 className="fw-bold mb-4">Resumen general</h5>
                 <div className="row g-3">
                   <div className="col-6">
-                    <div className="text-center p-3 rounded" style={{ background: '#f8f9fa' }}>
+                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
                       <div className="fs-3 fw-bold text-primary">
                         {Math.floor(stats.tiempoTotal / 60)}h {stats.tiempoTotal % 60}m
                       </div>
@@ -152,7 +152,7 @@ export default function Progreso() {
                     </div>
                   </div>
                   <div className="col-6">
-                    <div className="text-center p-3 rounded" style={{ background: '#f8f9fa' }}>
+                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
                       <div className="fs-3 fw-bold text-success">
                         {stats.descansos.promedio}d
                       </div>
@@ -160,7 +160,7 @@ export default function Progreso() {
                     </div>
                   </div>
                   <div className="col-6">
-                    <div className="text-center p-3 rounded" style={{ background: '#f8f9fa' }}>
+                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
                       <div className="fs-3 fw-bold text-info">
                         {stats.rachas.semanasCompletadas}
                       </div>
@@ -168,7 +168,7 @@ export default function Progreso() {
                     </div>
                   </div>
                   <div className="col-6">
-                    <div className="text-center p-3 rounded" style={{ background: '#f8f9fa' }}>
+                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
                       <div className="fs-3 fw-bold text-warning">
                         {stats.descansos.maximo}d
                       </div>

@@ -52,8 +52,8 @@ class ErrorBoundary extends Component {
             <pre
               className="p-3 rounded"
               style={{
-                background: '#1a1a2e',
-                color: '#ff6b6b',
+                background: 'var(--tinta)',
+                color: 'var(--rojo)',
                 fontSize: '0.8rem',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',

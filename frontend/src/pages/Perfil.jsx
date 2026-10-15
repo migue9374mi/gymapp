@@ -57,12 +57,12 @@ export default function Perfil() {
         <div className="d-flex align-items-center gap-3 flex-wrap">
           <div
             className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
-            style={{ width: '70px', height: '70px', background: '#e94560', fontSize: '1.8rem' }}
+            style={{ width: '70px', height: '70px', background: 'var(--rojo)', fontSize: '1.8rem' }}
           >
             {usuario.nombre.charAt(0).toUpperCase()}
           </div>
           <div className="flex-grow-1">
-            <h3 className="fw-bold mb-1" style={{ color: '#1a1a2e' }}>{usuario.nombre}</h3>
+            <h3 className="fw-bold mb-1" style={{ color: 'var(--tinta)' }}>{usuario.nombre}</h3>
             <div className="text-muted">{usuario.email}</div>
             <small className="text-muted">
               Entrenando desde el {new Date(usuario.fecha_registro).toLocaleDateString('es-ES')}
@@ -134,7 +134,7 @@ export default function Perfil() {
                         <small className="text-muted ms-2">{m.series} series</small>
                       </span>
                     </div>
-                    <div className="progress" style={{ height: '8px' }}>
+                    <div className="progress">
                       <div className="progress-bar bg-danger"
                         style={{ width: `${(m.volumen / maxVolumen) * 100}%` }}></div>
                     </div>
@@ -153,13 +153,13 @@ export default function Perfil() {
               ) : (
                 records.map((r, i) => (
                   <div key={r.nombre} className="d-flex justify-content-between align-items-center p-2 mb-2 rounded"
-                    style={{ background: i === 0 ? '#fff3e0' : '#f8f9fa' }}>
+                    style={{ background: i === 0 ? 'var(--crema)' : 'var(--papel-hondo)' }}>
                     <div>
                       <span className="fw-semibold">{r.nombre}</span>
                       {i === 0 && <i className="bi bi-trophy-fill text-warning ms-2"></i>}
                       <small className="text-muted d-block text-capitalize">{r.musculo}</small>
                     </div>
-                    <span className="fw-bold" style={{ color: '#e94560' }}>{r.max_peso} kg</span>
+                    <span className="fw-bold" style={{ color: 'var(--rojo)' }}>{r.max_peso} kg</span>
                   </div>
                 ))
               )}
@@ -215,26 +215,26 @@ export default function Perfil() {
                 <h5 className="fw-bold mb-4"><i className="bi bi-heart-pulse me-2"></i>Tu estado corporal</h5>
                 <div className="row g-3">
                   <div className="col-md-3 col-6">
-                    <div className="text-center p-3 rounded" style={{ background: '#f8f9fa' }}>
+                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
                       <div className="fs-3 fw-bold text-primary">{corporal.peso} kg</div>
                       <small className="text-muted">Peso</small>
                     </div>
                   </div>
                   <div className="col-md-3 col-6">
-                    <div className="text-center p-3 rounded" style={{ background: '#f8f9fa' }}>
+                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
                       <div className="fs-3 fw-bold text-info">{corporal.altura} cm</div>
                       <small className="text-muted">Altura</small>
                     </div>
                   </div>
                   <div className="col-md-3 col-6">
-                    <div className="text-center p-3 rounded" style={{ background: '#f8f9fa' }}>
-                      <div className="fs-3 fw-bold" style={{ color: '#00b894' }}>{corporal.imc}</div>
+                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
+                      <div className="fs-3 fw-bold" style={{ color: 'var(--verde)' }}>{corporal.imc}</div>
                       <small className="text-muted">IMC · {corporal.categoria}</small>
                     </div>
                   </div>
                   <div className="col-md-3 col-6">
-                    <div className="text-center p-3 rounded" style={{ background: '#f8f9fa' }}>
-                      <div className="fs-3 fw-bold" style={{ color: corporal.cambioPeso > 0 ? '#e94560' : '#00b894' }}>
+                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
+                      <div className="fs-3 fw-bold" style={{ color: corporal.cambioPeso > 0 ? 'var(--rojo)' : 'var(--verde)' }}>
                         {corporal.cambioPeso > 0 ? '+' : ''}{corporal.cambioPeso} kg
                       </div>
                       <small className="text-muted">Cambio de peso</small>
