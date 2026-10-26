@@ -947,3 +947,238 @@ a:hover { color: var(--rojo); }
     transform: none;
   }
 }
+
+/* ==============================================================
+   DESCANSO ENTRE SERIES
+   ----------------------------------------------------------------
+   Dos piezas:
+
+   1. Los ajustes, dentro de la tarjeta del ejercicio: botones de
+      tiempo, casilla de "Otro" e interruptor de inicio automatico.
+   2. La barra fija de abajo, que se ve desde lejos. En el gimnasio el
+      movil suele estar en el suelo, asi que el numero tiene que ser
+      grande y el color tiene que decir si queda mucho o poco.
+
+   La barra se pinta en el body (con un portal de React) para que
+   ninguna tarjeta con transformaciones o scroll la recorte.
+   ============================================================== */
+
+.descanso-ajustes {
+  border-top: 3px solid var(--tinta);
+}
+
+.descanso-ajustes__titulo {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.descanso-otro {
+  max-width: 190px;
+}
+
+/* ---------- La barra fija ---------- */
+
+.descanso-barra {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 1035;
+  width: min(720px, 100%);
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--amarillo);
+  color: var(--tinta);
+  border: 3px solid var(--tinta);
+  border-bottom: 0;
+  box-shadow: 0 -4px 0 var(--tinta);
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.descanso-barra__fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.descanso-barra__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.descanso-barra__titulo {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.descanso-barra__tiempo {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: clamp(2rem, 8vw, 3rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.descanso-barra__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.descanso-barra__btn {
+  border: 3px solid var(--tinta);
+  border-radius: 0;
+  padding: 7px 11px;
+  background: var(--blanco);
+  color: var(--tinta);
+  box-shadow: 3px 3px 0 var(--tinta);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.07s, box-shadow 0.07s;
+}
+
+.descanso-barra__btn:hover {
+  background: var(--blanco);
+  color: var(--tinta);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--tinta);
+}
+
+.descanso-barra__btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--tinta);
+}
+
+.descanso-barra__btn--cerrar {
+  background: var(--tinta);
+  color: var(--blanco);
+}
+
+.descanso-barra__btn--cerrar:hover {
+  background: var(--tinta);
+  color: var(--blanco);
+}
+
+.descanso-barra__progreso {
+  height: 8px;
+  margin-top: 10px;
+  border: 2px solid var(--tinta);
+  background: var(--blanco);
+  overflow: hidden;
+}
+
+.descanso-barra__progreso > div {
+  height: 100%;
+  background: var(--tinta);
+  transition: width 0.4s linear;
+}
+
+/* Ultimos 10 segundos: rojo, para que se vea de reojo */
+.descanso-barra--urgente {
+  background: var(--rojo);
+  color: var(--blanco);
+}
+
+.descanso-barra--urgente .descanso-barra__progreso > div {
+  background: var(--blanco);
+}
+
+/* Pausado: se queda en papel, sin gritar */
+.descanso-barra--pausado {
+  background: var(--crema);
+}
+
+/* Terminado: verde y "LISTO" */
+.descanso-barra--terminado {
+  background: var(--verde);
+  color: var(--blanco);
+}
+
+.descanso-barra--terminado .descanso-barra__progreso {
+  display: none;
+}
+
+.descanso-barra--terminado .descanso-barra__btn--cerrar {
+  background: var(--blanco);
+  color: var(--tinta);
+}
+
+/* El numero late en los ultimos segundos */
+@keyframes descanso-latido {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.descanso-barra--urgente .descanso-barra__tiempo {
+  animation: descanso-latido 0.9s ease-in-out infinite;
+}
+
+/* Espacio al final de la sesion para que la barra no tape el boton de
+   finalizar ni la lista de ejercicios */
+.sesion-con-descanso {
+  padding-bottom: 150px;
+}
+
+@media (max-width: 575px) {
+  .descanso-barra {
+    width: 100%;
+    border-right: 0;
+    border-left: 0;
+    border-top-width: 4px;
+    box-shadow: none;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .descanso-barra__tiempo {
+    font-size: 2.3rem;
+  }
+
+  .descanso-barra__btn {
+    padding: 7px 9px;
+    font-size: 0.75rem;
+  }
+
+  .sesion-con-descanso {
+    padding-bottom: 170px;
+  }
+}
+
+/* Movil tumbado: la barra no puede comerse media pantalla */
+@media (max-height: 520px) {
+  .descanso-barra__tiempo {
+    font-size: 1.7rem;
+  }
+
+  .sesion-con-descanso {
+    padding-bottom: 120px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .descanso-barra__btn {
+    transition: none;
+  }
+
+  .descanso-barra__btn:hover {
+    transform: none;
+  }
+
+  .descanso-barra--urgente .descanso-barra__tiempo {
+    animation: none;
+  }
+}

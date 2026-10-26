@@ -70,15 +70,20 @@ export async function pedirPermisoAvisos() {
   }
 }
 
-/** Borra todos los avisos programados. */
+/**
+ * Borra los avisos de entrenamiento (los siete dias de la semana).
+ *
+ * No toca el aviso del descanso entre series, que tiene su propio id y debe
+ * seguir vivo aunque se reprogramen los avisos del plan: el descanso forma
+ * parte del entrenamiento que se esta haciendo ahora.
+ */
 export async function cancelarAvisos() {
   if (!esAppNativa()) return
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications')
-    const pendientes = await LocalNotifications.getPending()
-    if (pendientes.notifications.length > 0) {
-      await LocalNotifications.cancel({ notifications: pendientes.notifications })
-    }
+    await LocalNotifications.cancel({
+      notifications: DIAS.map((_, dia) => ({ id: idDeDia(dia) })),
+    })
   } catch (e) {
     console.warn('No se pudieron cancelar los avisos:', e.message)
   }

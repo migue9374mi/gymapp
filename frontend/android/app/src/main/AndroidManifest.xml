@@ -44,6 +44,12 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
+      Vibracion del aviso de descanso. Sin este permiso, el telefono se
+      queda mudo cuando termina el descanso y solo queda el pitido.
+    -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!--
       Avisos a la hora exacta. Sin esto Android agrupa los avisos y puede
       retrasarlos casi una hora. No se usa camara ni calendario, pero en un
       aviso de "te toca entrenar" la hora exacta es justo lo que importa.

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
 import SesionActiva from '../components/SesionActiva'
+import { CLAVE_DESCANSO } from '../nativa/descansoLogica'
+import { cancelarAvisoDescanso } from '../nativa/descanso'
 
 const DIAS = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo']
 const MUSCULOS = [
@@ -64,6 +66,12 @@ function leerSesionActiva() {
 
 function borrarSesionActiva() {
   localStorage.removeItem(CLAVE_SESION)
+
+  // El descanso pertenece a esta sesion. Si la sesion se cierra, se descarta
+  // o ya no existe en el servidor, no debe quedar un aviso programado de una
+  // rutina que se ha dejado a medias.
+  localStorage.removeItem(CLAVE_DESCANSO)
+  cancelarAvisoDescanso()
 }
 
 // Hora actual en formato HH:MM
@@ -200,7 +208,11 @@ useEffect(() => {
     if (!window.confirm('¿Eliminar este entrenamiento?')) return
     try {
       await api.delete(`/entrenamientos/sesiones/${id}`)
-      if (sesionActiva?.id === id) setSesionActiva(null)
+      if (sesionActiva?.id === id) {
+        // Tambien borra el cronometro y el descanso guardados
+        borrarSesionActiva()
+        setSesionActiva(null)
+      }
       cargarDatos()
     } catch (err) {
       setError(mensajeDeError(err, 'Error al eliminar'))
@@ -274,6 +286,7 @@ useEffect(() => {
             ) : (
               <>
                 <SesionActiva
+                  key={sesionActiva.id}
                   sesion={sesionActiva}
                   onSesionCambiada={() => cargarSesion(sesionActiva.id)}
                   onFinalizada={(data) => {
