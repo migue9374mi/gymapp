@@ -42,13 +42,23 @@ function horaAMinutos(hora) {
 
 // Calcula la duracion en minutos a partir de hora de inicio y fin.
 // Si termina antes de empezar, se asume que cruzo la medianoche.
+// Si es la misma hora, la duracion es 0: no han pasado 24 horas.
 function calcularDuracion(horaInicio, horaFin) {
   const inicio = horaAMinutos(horaInicio);
   const fin = horaAMinutos(horaFin);
   if (inicio === null || fin === null) return null;
   let diff = fin - inicio;
-  if (diff <= 0) diff += 24 * 60;
+  if (diff < 0) diff += 24 * 60;
   return diff;
+}
+
+// Duracion medida por la app desde que se empezo la sesion. Es mas fiable
+// que restar dos horas HH:MM, sobre todo si se termina en el mismo minuto.
+function duracionDelCliente(valor) {
+  if (valor === null || valor === undefined || valor === '') return null;
+  const minutos = Number(valor);
+  if (!Number.isFinite(minutos)) return null;
+  return Math.min(24 * 60, Math.max(1, Math.round(minutos)));
 }
 
 // ==================== SESIONES ====================
@@ -222,7 +232,7 @@ router.delete('/sesiones/:id/series/:ejercicioId/:numero', async (req, res) => {
 // Finalizar la rutina: guarda la hora de fin y calcula la duracion automaticamente
 router.post('/sesiones/:id/finalizar', async (req, res) => {
   try {
-    const { hora_inicio, hora_fin } = req.body;
+    const { hora_inicio, hora_fin, duracion_minutos } = req.body;
 
     const sesion = await db.get('SELECT * FROM sesiones WHERE id = ? AND user_id = ?', [req.params.id, req.userId]);
     if (!sesion) {
@@ -233,10 +243,14 @@ router.post('/sesiones/:id/finalizar', async (req, res) => {
     const inicio = hora_inicio || sesion.hora_inicio || ahora;
     const fin = hora_fin || ahora;
 
-    const duracion = calcularDuracion(inicio, fin);
-    if (duracion === null) {
+    const duracionCalculada = calcularDuracion(inicio, fin);
+    if (duracionCalculada === null) {
       return res.status(400).json({ error: 'El formato de la hora debe ser HH:MM' });
     }
+
+    // La app manda los minutos reales transcurridos. Si no vienen (por
+    // ejemplo, una version antigua), se usan las horas como antes.
+    const duracion = duracionDelCliente(duracion_minutos) ?? duracionCalculada;
 
     await db.run(
       'UPDATE sesiones SET hora_inicio = ?, hora_fin = ?, duracion_minutos = ?, finalizada = 1 WHERE id = ?',

@@ -32,7 +32,7 @@ function calcularDuracion(inicio, fin) {
   const b = horaAMinutos(fin)
   if (a === null || b === null) return null
   let diff = b - a
-  if (diff <= 0) diff += 24 * 60
+  if (diff < 0) diff += 24 * 60
   return diff
 }
 

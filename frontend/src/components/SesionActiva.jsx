@@ -159,8 +159,25 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
   const finalizar = async () => {
     const fin = new Date()
     const horaFin = `${String(fin.getHours()).padStart(2, '0')}:${String(fin.getMinutes()).padStart(2, '0')}`
+
+    // Minutos reales desde que empezo la sesion. Se calculan con la marca
+    // de tiempo guardada, no restando dos horas HH:MM: si empiezas y acabas
+    // en el mismo minuto, esa resta daria 24 horas.
+    const guardada = leerSesionActiva()
+    const inicioMs = Number(guardada?.inicioMs)
+    const duracionMinutos =
+      guardada &&
+      Number(guardada.id) === Number(sesion.id) &&
+      Number.isFinite(inicioMs) &&
+      inicioMs > 0
+        ? Math.min(24 * 60, Math.max(1, Math.round((fin.getTime() - inicioMs) / 60000)))
+        : undefined
+
     try {
-      const res = await api.post(`/entrenamientos/sesiones/${sesion.id}/finalizar`, { hora_fin: horaFin })
+      const res = await api.post(`/entrenamientos/sesiones/${sesion.id}/finalizar`, {
+        hora_fin: horaFin,
+        duracion_minutos: duracionMinutos,
+      })
 
       // Si la rutina se acaba, el descanso ya no tiene sentido: se para y
       // se cancela el aviso que pudiera estar programado.
