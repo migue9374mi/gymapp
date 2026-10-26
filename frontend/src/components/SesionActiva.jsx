@@ -179,10 +179,33 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
         duracion_minutos: duracionMinutos,
       })
 
+      // Si el servidor todavia no acepta la duracion de la app, corrige la
+      // sesion ajustando la hora de inicio. Asi el historial no se queda en
+      // 24 h aunque el backend tarde en actualizarse.
+      let datosFinales = res.data
+      if (duracionMinutos !== undefined && Number(res.data.duracion_minutos) !== duracionMinutos) {
+        try {
+          const inicioAjustado = new Date(fin.getTime() - duracionMinutos * 60000)
+          const horaInicioAjustada = `${String(inicioAjustado.getHours()).padStart(2, '0')}:${String(inicioAjustado.getMinutes()).padStart(2, '0')}`
+          const corregida = await api.put(`/entrenamientos/sesiones/${sesion.id}`, {
+            hora_inicio: horaInicioAjustada,
+            hora_fin: horaFin,
+          })
+          datosFinales = {
+            ...res.data,
+            duracion_minutos: corregida.data.sesion.duracion_minutos,
+            hora_inicio: corregida.data.sesion.hora_inicio,
+            hora_fin: corregida.data.sesion.hora_fin,
+          }
+        } catch (e) {
+          // La rutina ya esta finalizada; si falla la correccion, se sigue.
+        }
+      }
+
       // Si la rutina se acaba, el descanso ya no tiene sentido: se para y
       // se cancela el aviso que pudiera estar programado.
       detenerDescanso()
-      onFinalizada(res.data)
+      onFinalizada(datosFinales)
     } catch (err) {
       setError(mensajeDeError(err, 'Error al finalizar'))
     }
