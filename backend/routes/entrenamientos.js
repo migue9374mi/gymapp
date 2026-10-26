@@ -249,8 +249,9 @@ router.post('/sesiones/:id/finalizar', async (req, res) => {
     }
 
     // La app manda los minutos reales transcurridos. Si no vienen (por
-    // ejemplo, una version antigua), se usan las horas como antes.
-    const duracion = duracionDelCliente(duracion_minutos) ?? duracionCalculada;
+    // ejemplo, una version antigua), se usan las horas como antes. El
+    // minimo es 1 minuto: una rutina nunca dura 0.
+    const duracion = duracionDelCliente(duracion_minutos) ?? Math.max(1, duracionCalculada);
 
     await db.run(
       'UPDATE sesiones SET hora_inicio = ?, hora_fin = ?, duracion_minutos = ?, finalizada = 1 WHERE id = ?',
