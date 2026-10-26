@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
 import SesionActiva from '../components/SesionActiva'
@@ -93,6 +93,18 @@ export default function Entrenar() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
   const [exito, setExito] = useState('')
+  const timeoutExito = useRef(null)
+
+  // Un solo temporizador para los avisos: si llega uno nuevo antes de que
+  // desaparezca el anterior, se cancela el viejo. Sin esto, finalizar justo
+  // despues de empezar borraba el mensaje de "Rutina finalizada".
+  const mostrarExito = (mensaje, ms = 3000) => {
+    clearTimeout(timeoutExito.current)
+    setExito(mensaje)
+    timeoutExito.current = setTimeout(() => setExito(''), ms)
+  }
+
+  useEffect(() => () => clearTimeout(timeoutExito.current), [])
 
   const [notas, setNotas] = useState('')
 
@@ -159,8 +171,7 @@ useEffect(() => {
       // Guardamos el momento exacto de inicio para que el cronometro no se pierda
       guardarSesionActiva(sesionId, Date.now())
 
-      setExito(`Entrenamiento "${rutina.nombre}" iniciado`)
-      setTimeout(() => setExito(''), 3000)
+      mostrarExito(`Entrenamiento "${rutina.nombre}" iniciado`)
       await cargarSesion(sesionId)
       cargarDatos()
     } catch (err) {
@@ -179,8 +190,7 @@ useEffect(() => {
         reps: parseInt(extra.reps),
         peso: parseFloat(extra.peso) || 0,
       })
-      setExito(res.data.message)
-      setTimeout(() => setExito(''), 3000)
+      mostrarExito(res.data.message)
       setExtra({ nombre: '', musculo: 'pecho', series: 3, reps: 10, peso: 0, justificacion: '' })
       setMostrarExtra(false)
       cargarSesion(sesionActiva.id)
@@ -194,8 +204,7 @@ useEffect(() => {
     try {
       const params = justificacion ? `?justificacion=${encodeURIComponent(justificacion)}` : ''
       const res = await api.delete(`/entrenamientos/sesiones/${sesionActiva.id}/ejercicio/${quitarEjercicio.id}${params}`)
-      setExito(res.data.message)
-      setTimeout(() => setExito(''), 3000)
+      mostrarExito(res.data.message)
       setQuitarEjercicio(null)
       setJustificacion('')
       cargarSesion(sesionActiva.id)
@@ -294,8 +303,7 @@ useEffect(() => {
                     const d = data.duracion_minutos
                     const h = Math.floor(d / 60)
                     const m = d % 60
-                    setExito(`Rutina finalizada: ${data.hora_inicio} - ${data.hora_fin} · ${formatearDuracion(d)} (${h}h ${m}min)`)
-                    setTimeout(() => setExito(''), 8000)
+                    mostrarExito(`Rutina finalizada: ${data.hora_inicio} - ${data.hora_fin} · ${formatearDuracion(d)} (${h}h ${m}min)`, 8000)
                     setSesionActiva(null)
                     cargarDatos()
                   }}
