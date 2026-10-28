@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
+import AuthShell from '../components/AuthShell'
+import Icon from '../components/Icon'
+import { Avisos } from '../components/ui'
 
 /**
  * Pedir el enlace para recuperar la contrasena.
@@ -32,59 +35,52 @@ export default function OlvideContrasena() {
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2 className="text-center">Recuperar contraseña</h2>
-        <p className="subtitle text-center">
-          Escribe tu correo y te mandamos un enlace para poner una contraseña nueva
-        </p>
+    <AuthShell
+      eyebrow="Recuperar acceso"
+      titulo={<>Nueva<br />contraseña</>}
+      intro="Escribe tu correo y te mandamos un enlace para poner una contraseña nueva."
+    >
+      <Avisos error={error} />
 
-        {error && (
-          <div className="alert alert-danger" role="alert">{error}</div>
-        )}
-
-        {exito && (
-          <div className="alert alert-success" role="alert">
-            <i className="bi bi-check-circle me-2"></i>{exito}
-          </div>
-        )}
-
-        {!exito && (
-          <form onSubmit={enviar}>
-            <div className="mb-4">
-              <label htmlFor="email" className="form-label">Email</label>
-              <input
-                type="email"
-                className="form-control"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
-                required
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Enviando...
-                </>
-              ) : (
-                'Enviarme el enlace'
-              )}
-            </button>
-          </form>
-        )}
-
-        <div className="text-center mt-4">
-          <p className="mb-0">
-            <Link to="/login" style={{ color: 'var(--rojo)', fontWeight: 600 }}>
-              Volver a iniciar sesión
-            </Link>
-          </p>
+      {exito && (
+        <div className="alert alert-success" role="status">
+          <Icon nombre="check" />
+          <span>{exito}</span>
         </div>
-      </div>
-    </div>
+      )}
+
+      {!exito ? (
+        <form className="login-form" onSubmit={enviar}>
+          <div className="field">
+            <label htmlFor="email">Correo</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@email.com"
+              autoComplete="email"
+              required
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={loading}>
+            {loading ? (
+              <><span className="mini-spinner" /> Enviando…</>
+            ) : (
+              <>Enviarme el enlace <Icon nombre="arrow-right" /></>
+            )}
+          </button>
+        </form>
+      ) : (
+        <p className="helper-copy">
+          Revisa tu bandeja de entrada. El enlace dura una hora y solo se puede usar una vez.
+        </p>
+      )}
+
+      <p className="auth-switch">
+        <Link to="/login">Volver a iniciar sesión</Link>
+      </p>
+    </AuthShell>
   )
 }

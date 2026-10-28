@@ -3,6 +3,8 @@ import api, { mensajeDeError, urlImagen, urlFondo } from '../api/axios'
 import { esAppNativa, hacerFoto, validarImagen } from '../nativa/camara'
 import { aplicarFondo, ajusteFondo, guardarAjusteFondo } from './FondoApp'
 import { useAuth } from '../context/AuthContext'
+import Icon from './Icon'
+import { Avisos } from './ui'
 
 /**
  * Permite elegir la imagen de fondo de la app.
@@ -135,150 +137,147 @@ export default function FondoUsuario() {
   }
 
   return (
-    <div className="dashboard-card mb-4">
-      <h5 className="fw-bold mb-1">
-        <i className="bi bi-image me-2"></i>Fondo de la app
-      </h5>
-      <p className="text-muted small mb-3">
-        Elige la imagen que quieras ver de fondo. Cada persona ve la suya.
-      </p>
-
-      {error && <div className="alert alert-danger py-2">{error}</div>}
-      {exito && (
-        <div className="alert alert-success py-2">
-          <i className="bi bi-check-circle me-2"></i>{exito}
+    <section className="panel settings-panel">
+      <div className="panel-head">
+        <div>
+          <h3>Fondo de la app</h3>
+          <p className="helper-copy">Cada persona ve el suyo, también en el móvil.</p>
         </div>
-      )}
+        <span className="tag tag-ink"><Icon nombre="image" /> Fondo</span>
+      </div>
 
-      <div className="row g-3">
-        {/* Vista previa */}
-        <div className="col-md-5">
-          <div
-            className="rounded overflow-hidden border d-flex align-items-center justify-content-center"
-            style={{
-              height: '160px',
-              background: fondoActual || vistaPrevia ? 'var(--tinta)' : 'var(--papel-hondo)',
-            }}
-          >
-            {vistaPrevia || fondoActual ? (
-              <img
-                src={vistaPrevia || urlFondo(fondoActual)}
-                alt="Vista previa del fondo"
-                className="w-100 h-100"
-                style={{ objectFit: 'cover', opacity: 0.9 }}
-              />
-            ) : (
-              <i className="bi bi-image text-muted" style={{ fontSize: '2rem' }}></i>
+      <div className="panel-body">
+        <Avisos error={error} exito={exito} />
+
+        <div className="fondo-layout">
+          {/* Vista previa */}
+          <div>
+            <div className="fondo-preview">
+              {vistaPrevia || fondoActual ? (
+                <img
+                  src={vistaPrevia || urlFondo(fondoActual)}
+                  alt="Vista previa del fondo"
+                />
+              ) : (
+                <Icon nombre="image" />
+              )}
+              {fondoActual && !vistaPrevia && (
+                <span className="fondo-preview-label">Actual</span>
+              )}
+            </div>
+
+            {fondoActual && (
+              <div className="fondo-actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={quitar}
+                  disabled={ocupado}
+                >
+                  <Icon nombre="trash" /> Quitar el fondo
+                </button>
+              </div>
             )}
           </div>
-          {fondoActual && (
-            <button
-              className="btn btn-sm btn-outline-danger mt-2 w-100"
-              onClick={quitar}
-              disabled={ocupado}
-            >
-              <i className="bi bi-trash me-1"></i>Quitar el fondo
-            </button>
-          )}
-        </div>
 
-        {/* Elegir y ajustar */}
-        <div className="col-md-7">
-          <form onSubmit={subir}>
-            <div className="mb-3">
-              {/*
-                El selector de archivos abre la galeria del telefono tambien
-                dentro de la app, y devuelve un File de verdad. Por eso
-                "Elegir" es exactamente igual en web y en movil.
-              */}
-              <label className="form-label small text-muted">Elige una imagen</label>
-              <input
-                ref={inputRef}
-                type="file"
-                className="form-control"
-                accept="image/*"
-                onChange={elegirArchivo}
-              />
+          {/* Elegir y ajustar */}
+          <div>
+            <form onSubmit={subir}>
+              <div className="field">
+                {/*
+                  El selector de archivos abre la galeria del telefono tambien
+                  dentro de la app, y devuelve un File de verdad. Por eso
+                  "Elegir" es exactamente igual en web y en movil.
+                */}
+                <label htmlFor="fondo-archivo">Elige una imagen</label>
+                <input
+                  id="fondo-archivo"
+                  ref={inputRef}
+                  type="file"
+                  className="form-control fondo-file"
+                  accept="image/*"
+                  onChange={elegirArchivo}
+                />
+                <span className="helper-copy">jpg, png o webp. Hasta 12 MB.</span>
+              </div>
 
               {nativa && (
                 <button
                   type="button"
-                  className="btn btn-outline-primary w-100 mt-2"
+                  className="btn btn-ghost btn-block"
                   onClick={abrirCamara}
                 >
-                  <i className="bi bi-camera me-2"></i>Hacer una foto nueva
+                  <Icon nombre="camera" /> Hacer una foto nueva
                 </button>
               )}
 
-              <small className="text-muted">jpg, png o webp. Hasta 12 MB.</small>
-            </div>
-
-            <div className="mb-3">
-              <label className="form-label small text-muted d-flex justify-content-between">
-                <span>Cuanto se ve</span>
-                <span>{Math.round(opacidad * 100)}%</span>
-              </label>
-              <input
-                type="range"
-                className="form-range"
-                min="0.05"
-                max="0.95"
-                step="0.05"
-                value={opacidad}
-                onChange={(e) => setOpacidad(parseFloat(e.target.value))}
-                onMouseUp={(e) => cambiarOpacidad(parseFloat(e.target.value))}
-                onTouchEnd={(e) => cambiarOpacidad(parseFloat(e.target.value))}
-                disabled={!fondoActual && !vistaPrevia}
-              />
-              <small className="text-muted">
-                Con menos se ve mejor el texto. Si no se lee, bajalo.
-              </small>
-            </div>
-
-            {vistaPrevia && (
-              <button type="submit" className="btn btn-primary w-100" disabled={ocupado}>
-                {ocupado ? (
-                  <><span className="spinner-border spinner-border-sm me-2"></span>Guardando...</>
-                ) : (
-                  <><i className="bi bi-check-lg me-2"></i>Usar esta imagen</>
-                )}
-              </button>
-            )}
-          </form>
-
-          {fondoActual && (
-            <div className="mt-3 pt-3 border-top">
-              <label className="form-label small text-muted">Como se ajusta</label>
-              <div className="btn-group w-100" role="group">
-                <button
-                  type="button"
-                  className={`btn btn-sm ${ajuste === 'entera' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                  onClick={() => cambiarAjuste('entera')}
-                >
-                  Verla entera
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${ajuste === 'cubrir' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                  onClick={() => cambiarAjuste('cubrir')}
-                >
-                  Cubrir pantalla
-                </button>
+              <div className="field" style={{ marginTop: 14 }}>
+                <div className="fondo-opacity-head">
+                  <span>Cuánto se ve</span>
+                  <strong>{Math.round(opacidad * 100)}%</strong>
+                </div>
+                <input
+                  type="range"
+                  className="form-range"
+                  min="0.05"
+                  max="0.95"
+                  step="0.05"
+                  value={opacidad}
+                  onChange={(e) => setOpacidad(parseFloat(e.target.value))}
+                  onMouseUp={(e) => cambiarOpacidad(parseFloat(e.target.value))}
+                  onTouchEnd={(e) => cambiarOpacidad(parseFloat(e.target.value))}
+                  disabled={!fondoActual && !vistaPrevia}
+                />
+                <span className="helper-copy">
+                  Con menos se ve mejor el texto. Si no se lee, bájalo.
+                </span>
               </div>
-              <small className="text-muted">
-                "Verla entera" no recorta nada. "Cubrir pantalla" recorta por los
-                lados hasta llenar el hueco.
-              </small>
-            </div>
-          )}
-        </div>
-      </div>
 
-      {fondoActual && (
-        <small className="text-muted d-block mt-3">
-          Imagen actual: <code>{urlImagen(fondoActual).split('/').pop()}</code>
-        </small>
-      )}
-    </div>
+              {vistaPrevia && (
+                <button type="submit" className="btn btn-primary btn-block" disabled={ocupado}>
+                  {ocupado ? (
+                    <><span className="mini-spinner" /> Guardando…</>
+                  ) : (
+                    <><Icon nombre="check" /> Usar esta imagen</>
+                  )}
+                </button>
+              )}
+            </form>
+
+            {fondoActual && (
+              <div className="form-section">
+                <span className="field-label">Cómo se ajusta</span>
+                <div className="btn-group" role="group">
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${ajuste === 'entera' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => cambiarAjuste('entera')}
+                  >
+                    Verla entera
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${ajuste === 'cubrir' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => cambiarAjuste('cubrir')}
+                  >
+                    Cubrir pantalla
+                  </button>
+                </div>
+                <span className="helper-copy" style={{ marginTop: 8 }}>
+                  «Verla entera» no recorta nada. «Cubrir pantalla» recorta por los
+                  lados hasta llenar el hueco.
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {fondoActual && (
+          <p className="helper-copy" style={{ marginTop: 14 }}>
+            Imagen actual: <code>{urlImagen(fondoActual).split('/').pop()}</code>
+          </p>
+        )}
+      </div>
+    </section>
   )
 }

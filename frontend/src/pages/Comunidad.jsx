@@ -1,7 +1,25 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
-import { CATEGORIAS, MUSCULOS, COLOR_CATEGORIA } from './Rutinas'
+import { CATEGORIAS, MUSCULOS } from './Rutinas'
+import Icon from '../components/Icon'
+import { PageHead, Avisos } from '../components/ui'
+
+function etiquetaCategoria(valor) {
+  return CATEGORIAS.find((c) => c.valor === valor)?.label || valor
+}
+
+function tono(categoria) {
+  if (categoria === 'push' || categoria === 'cardio') return 'tag-red'
+  if (categoria === 'pull') return 'tag-lime'
+  if (categoria === 'pierna') return 'tag-blue'
+  if (categoria === 'full_body' || categoria === 'core') return 'tag-yellow'
+  return 'tag-ink'
+}
+
+function inicial(nombre) {
+  return String(nombre || '?').trim().charAt(0).toUpperCase()
+}
 
 export default function Comunidad() {
   const [rutinas, setRutinas] = useState([])
@@ -55,114 +73,135 @@ export default function Comunidad() {
     }
   }
 
+  const hayFiltros = Boolean(buscar) || categoria !== 'todas' || musculo !== 'todos'
+
   return (
-    <div className="container py-4">
-      <div className="mb-4">
-        <h1 className="fw-bold" style={{ color: 'var(--tinta)' }}>Comunidad</h1>
-        <p className="text-muted">
-          Rutinas compartidas por otros usuarios. Copia las que te gusten a tu cuenta.
-        </p>
-      </div>
+    <>
+      <PageHead
+        eyebrow="Entrena con los tuyos"
+        titulo="Comunidad"
+        sub="Rutinas compartidas por la gente del club. Copia las que te sirvan y comparte las tuyas."
+      >
+        <Link to="/rutinas" className="btn btn-ghost">
+          <Icon nombre="users" /> Compartir una rutina
+        </Link>
+      </PageHead>
 
-      {error && <div className="alert alert-danger">{error}</div>}
+      <Avisos error={error} />
 
-      {/* Filtros */}
-      <div className="dashboard-card mb-4">
-        <div className="row g-3">
-          <div className="col-md-4">
-            <label className="form-label fw-semibold">Buscar</label>
+      <section className="panel community-filters">
+        <div className="community-filter-grid">
+          <div className="field">
+            <label htmlFor="comunidad-buscar">Buscar</label>
             <div className="input-group">
-              <span className="input-group-text"><i className="bi bi-search"></i></span>
+              <span className="input-group-text"><Icon nombre="search" /></span>
               <input
+                id="comunidad-buscar"
                 className="form-control"
                 value={buscar}
                 onChange={(e) => setBuscar(e.target.value)}
-                placeholder="Rutina, ejercicio o usuario..."
+                placeholder="Rutina, ejercicio o usuario…"
               />
             </div>
           </div>
-          <div className="col-md-3">
-            <label className="form-label fw-semibold">Categoría</label>
-            <select className="form-select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
+
+          <div className="field">
+            <label htmlFor="comunidad-categoria">Categoría</label>
+            <select
+              id="comunidad-categoria"
+              className="form-select"
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value)}
+            >
               <option value="todas">Todas</option>
               {CATEGORIAS.map((c) => <option key={c.valor} value={c.valor}>{c.label}</option>)}
             </select>
           </div>
-          <div className="col-md-3">
-            <label className="form-label fw-semibold">Músculo</label>
-            <select className="form-select" value={musculo} onChange={(e) => setMusculo(e.target.value)}>
+
+          <div className="field">
+            <label htmlFor="comunidad-musculo">Músculo</label>
+            <select
+              id="comunidad-musculo"
+              className="form-select"
+              value={musculo}
+              onChange={(e) => setMusculo(e.target.value)}
+            >
               <option value="todos">Todos</option>
               {MUSCULOS.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
-          <div className="col-md-2">
-            <label className="form-label fw-semibold">Ordenar</label>
-            <select className="form-select" value={orden} onChange={(e) => setOrden(e.target.value)}>
+
+          <div className="field">
+            <label htmlFor="comunidad-orden">Ordenar</label>
+            <select
+              id="comunidad-orden"
+              className="form-select"
+              value={orden}
+              onChange={(e) => setOrden(e.target.value)}
+            >
               <option value="recientes">Más nuevas</option>
               <option value="likes">Más me gusta</option>
               <option value="comentarios">Más comentadas</option>
             </select>
           </div>
         </div>
-      </div>
+      </section>
 
       {cargando ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-danger" role="status"></div>
+        <div className="loading-panel" role="status">
+          <span className="loading-dot" />
+          <span>Buscando rutinas compartidas…</span>
         </div>
       ) : rutinas.length === 0 ? (
-        <div className="dashboard-card text-center py-5">
-          <p className="fs-1 mb-2">🌐</p>
-          <h5 className="fw-bold">Todavia no hay rutinas compartidas</h5>
-          <p className="text-muted mb-4">
-            {buscar || categoria !== 'todas' || musculo !== 'todos'
-              ? 'Prueba con otros filtros de busqueda'
-              : 'Comparte una de tus rutinas para que aparezca aqui'}
+        <div className="empty-state">
+          <span className="empty-icon"><Icon nombre="users" /></span>
+          <h3>Todavía no hay rutinas compartidas</h3>
+          <p>
+            {hayFiltros
+              ? 'Prueba con otros filtros de búsqueda.'
+              : 'Comparte una de tus rutinas para que aparezca aquí.'}
           </p>
           <Link to="/rutinas" className="btn btn-primary">Ir a mis rutinas</Link>
         </div>
       ) : (
-        <div className="row g-4">
+        <div className="community-routines">
           {rutinas.map((r) => (
-            <div className="col-md-6 col-lg-4" key={r.id}>
-              <div className="card h-100">
-                <div className="card-body d-flex flex-column">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <span className={`badge bg-${COLOR_CATEGORIA[r.categoria] || 'secondary'}`}>
-                      {CATEGORIAS.find((c) => c.valor === r.categoria)?.label || r.categoria}
-                    </span>
-                  </div>
-
-                  <Link to={`/comunidad/${r.id}`} className="text-decoration-none text-reset">
-                    <h5 className="fw-bold mb-1">{r.nombre}</h5>
-                  </Link>
-                  <small className="text-muted mb-2">
-                    <i className="bi bi-person me-1"></i>{r.autor}
-                  </small>
-                  <p className="text-muted small flex-grow-1">{r.descripcion || 'Sin descripción'}</p>
-
-                  <div className="d-flex gap-3 text-muted small mb-3">
-                    <span><i className="bi bi-list-check me-1"></i>{r.num_ejercicios} ejercicios</span>
-                    <span><i className="bi bi-chat-left-text me-1"></i>{r.num_comentarios}</span>
-                  </div>
-
-                  <button
-                    className={`btn btn-sm w-100 ${r.me_gusta ? 'btn-danger' : 'btn-outline-danger'}`}
-                    onClick={(e) => toggleLike(r, e)}
-                  >
-                    <i className={`bi ${r.me_gusta ? 'bi-heart-fill' : 'bi-heart'} me-1`}></i>
-                    {r.num_likes} {r.num_likes === 1 ? 'me gusta' : 'me gusta'}
-                  </button>
-
-                  <Link to={`/comunidad/${r.id}`} className="btn btn-outline-primary btn-sm w-100 mt-2">
-                    Ver y comentar
-                  </Link>
-                </div>
+            <article className="community-routine" key={r.id}>
+              <div className="community-routine-head">
+                <span className={`tag ${tono(r.categoria)}`}>{etiquetaCategoria(r.categoria)}</span>
+                <span className="community-author">
+                  <span className="community-author-avatar" aria-hidden="true">{inicial(r.autor)}</span>
+                  <strong>{r.autor}</strong>
+                </span>
               </div>
-            </div>
+
+              <h2><Link to={`/comunidad/${r.id}`}>{r.nombre}</Link></h2>
+              <p>{r.descripcion || 'Sin descripción todavía.'}</p>
+
+              <div className="community-meta">
+                <span><Icon nombre="list" />{r.num_ejercicios} ejercicios</span>
+                <span><Icon nombre="message" />{r.num_comentarios}</span>
+                <span><Icon nombre="heart" />{r.num_likes}</span>
+              </div>
+
+              <div className="community-actions-row">
+                <button
+                  type="button"
+                  className={`btn btn-sm ${r.me_gusta ? 'btn-lime' : 'btn-ghost'}`}
+                  onClick={(e) => toggleLike(r, e)}
+                  aria-pressed={Boolean(r.me_gusta)}
+                  title={r.me_gusta ? 'Quitar me gusta' : 'Me gusta'}
+                >
+                  <Icon nombre="heart" /> {r.num_likes}
+                </button>
+                <Link to={`/comunidad/${r.id}`} className="btn btn-primary btn-sm">
+                  Ver y comentar <Icon nombre="arrow-right" />
+                </Link>
+              </div>
+            </article>
           ))}
         </div>
       )}
-    </div>
+    </>
   )
 }

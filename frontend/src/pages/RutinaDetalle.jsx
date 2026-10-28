@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
-import { CATEGORIAS, MUSCULOS, COLOR_CATEGORIA } from './Rutinas'
+import { CATEGORIAS, MUSCULOS } from './Rutinas'
+import Icon from '../components/Icon'
+import { Avisos, Cargando } from '../components/ui'
 
 // Mismos valores que usa el backend para calcular el descanso automaticamente
 const DESCANSO_SUGERIDO = {
@@ -24,6 +26,18 @@ function formatearDescanso(segundos) {
   if (segundos < 60) return `${segundos}s`
   const min = segundos / 60
   return `${Number.isInteger(min) ? min : min.toFixed(1)} min`
+}
+
+function etiquetaCategoria(valor) {
+  return CATEGORIAS.find((c) => c.valor === valor)?.label || valor
+}
+
+function tono(categoria) {
+  if (categoria === 'push' || categoria === 'cardio') return 'tag-red'
+  if (categoria === 'pull') return 'tag-lime'
+  if (categoria === 'pierna') return 'tag-blue'
+  if (categoria === 'full_body' || categoria === 'core') return 'tag-yellow'
+  return 'tag-ink'
 }
 
 export default function RutinaDetalle() {
@@ -102,9 +116,9 @@ export default function RutinaDetalle() {
   }
 
   const handleActualizarEjercicio = async (ej) => {
-    const series = prompt("Número de series:", ej.series)
+    const series = prompt('Número de series:', ej.series)
     if (series === null) return
-    const nombre = prompt("Nombre del ejercicio:", ej.nombre)
+    const nombre = prompt('Nombre del ejercicio:', ej.nombre)
     if (nombre === null) return
 
     try {
@@ -123,20 +137,22 @@ export default function RutinaDetalle() {
   }
 
   if (cargando) {
-    return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-danger" role="status"></div>
-      </div>
-    )
+    return <Cargando texto="Leyendo la rutina…" />
   }
 
   if (error && !rutina) {
     return (
-      <div className="container py-5 text-center">
-        <p className="fs-1">😕</p>
-        <h5>{error}</h5>
-        <Link to="/rutinas" className="btn btn-primary mt-3">Volver a rutinas</Link>
-      </div>
+      <>
+        <button className="back-link" type="button" onClick={() => navigate('/rutinas')}>
+          <Icon nombre="arrow-left" /> Volver a mis rutinas
+        </button>
+        <div className="empty-state">
+          <span className="empty-icon"><Icon nombre="warning" /></span>
+          <h3>No encontramos esta rutina</h3>
+          <p>{error}</p>
+          <Link to="/rutinas" className="btn btn-primary">Volver a mis rutinas</Link>
+        </div>
+      </>
     )
   }
 
@@ -144,158 +160,217 @@ export default function RutinaDetalle() {
   const volumenEstimado = rutina.ejercicios.reduce((sum, e) => sum + (e.series * (e.reps || 0) * (e.peso || 0)), 0)
 
   return (
-    <div className="container py-4">
-      <button className="btn btn-link text-decoration-none px-0 mb-3" onClick={() => navigate('/rutinas')}>
-        <i className="bi bi-arrow-left me-2"></i>Volver a mis rutinas
+    <>
+      <button className="back-link" type="button" onClick={() => navigate('/rutinas')}>
+        <Icon nombre="arrow-left" /> Volver a mis rutinas
       </button>
 
-      {error && <div className="alert alert-danger">{error}</div>}
-      {exito && <div className="alert alert-success"><i className="bi bi-check-circle me-2"></i>{exito}</div>}
+      <Avisos error={error} exito={exito} />
 
       {editando ? (
-        <div className="dashboard-card mb-4">
-          <h5 className="fw-bold mb-3">Editar Rutina</h5>
-          <form onSubmit={handleActualizarRutina}>
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label">Nombre</label>
-                <input className="form-control" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">Categoría</label>
-                <select className="form-select" value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-                  {CATEGORIAS.map((c) => <option key={c.valor} value={c.valor}>{c.label}</option>)}
-                </select>
-              </div>
-              <div className="col-12">
-                <label className="form-label">Descripción</label>
-                <textarea className="form-control" rows="2" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
-              </div>
-              <div className="col-12 d-flex gap-2">
-                <button type="submit" className="btn btn-primary">
-                  <i className="bi bi-check-lg me-2"></i>Guardar cambios
-                </button>
-                <button type="button" className="btn btn-outline-secondary" onClick={() => setEditando(false)}>
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      ) : (
-        <div className="dashboard-card mb-4">
-          <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
-            <div>
-              <span className={`badge bg-${COLOR_CATEGORIA[rutina.categoria] || 'secondary'} mb-2`}>
-                {CATEGORIAS.find((c) => c.valor === rutina.categoria)?.label || rutina.categoria}
-              </span>
-              <h2 className="fw-bold mb-1" style={{ color: 'var(--tinta)' }}>{rutina.nombre}</h2>
-              <p className="text-muted mb-0">{rutina.descripcion || 'Sin descripción'}</p>
-            </div>
-            <button className="btn btn-outline-primary" onClick={() => setEditando(true)}>
-              <i className="bi bi-pencil me-2"></i>Editar rutina
+        <section className="panel routine-form-panel">
+          <div className="panel-head">
+            <h3>Editar rutina</h3>
+            <button className="panel-link" type="button" onClick={() => setEditando(false)}>
+              Cancelar
             </button>
           </div>
 
+          <div className="routine-form-body">
+            <form onSubmit={handleActualizarRutina}>
+              <div className="form-grid">
+                <div className="field">
+                  <label htmlFor="editar-nombre">Nombre</label>
+                  <input
+                    id="editar-nombre"
+                    className="form-control"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="editar-categoria">Categoría</label>
+                  <select
+                    id="editar-categoria"
+                    className="form-select"
+                    value={categoria}
+                    onChange={(e) => setCategoria(e.target.value)}
+                  >
+                    {CATEGORIAS.map((c) => <option key={c.valor} value={c.valor}>{c.label}</option>)}
+                  </select>
+                </div>
+
+                <div className="field field--full">
+                  <label htmlFor="editar-descripcion">Descripción</label>
+                  <textarea
+                    id="editar-descripcion"
+                    className="form-control"
+                    rows="2"
+                    value={descripcion}
+                    onChange={(e) => setDescripcion(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button type="submit" className="btn btn-primary">
+                  <Icon nombre="check" /> Guardar cambios
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={() => setEditando(false)}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+      ) : (
+        <section className="panel routine-hero">
+          <div className="routine-card-head">
+            <div className="tag-row">
+              <span className={`tag ${tono(rutina.categoria)}`}>{etiquetaCategoria(rutina.categoria)}</span>
+              <span className="tag tag-ghost">{rutina.ejercicios.length} ejercicios</span>
+            </div>
+            <button className="btn btn-ghost btn-sm" type="button" onClick={() => setEditando(true)}>
+              <Icon nombre="edit" /> Editar
+            </button>
+          </div>
+
+          <h1>{rutina.nombre}</h1>
+          <p>{rutina.descripcion || 'Sin descripción todavía.'}</p>
+
           {rutina.ejercicios.length > 0 && (
-            <div className="row g-3 mt-2 pt-3 border-top">
-              <div className="col-4 text-center">
-                <div className="fw-bold fs-4" style={{ color: 'var(--rojo)' }}>{rutina.ejercicios.length}</div>
-                <div className="small text-muted">Ejercicios</div>
+            <div className="routine-stats">
+              <div className="routine-stat">
+                <strong>{rutina.ejercicios.length}</strong>
+                <span>Ejercicios</span>
               </div>
-              <div className="col-4 text-center">
-                <div className="fw-bold fs-4" style={{ color: 'var(--verde)' }}>{totalSeries}</div>
-                <div className="small text-muted">Series totales</div>
+              <div className="routine-stat">
+                <strong>{totalSeries}</strong>
+                <span>Series totales</span>
               </div>
-              <div className="col-4 text-center">
-                <div className="fw-bold fs-4" style={{ color: 'var(--azul)' }}>{volumenEstimado.toLocaleString()}</div>
-                <div className="small text-muted">Volumen (kg)</div>
+              <div className="routine-stat">
+                <strong>{volumenEstimado.toLocaleString('es-ES')}</strong>
+                <span>Volumen estimado (kg)</span>
               </div>
             </div>
           )}
-        </div>
+        </section>
       )}
 
-      <div className="dashboard-card mb-4">
-        <h5 className="fw-bold mb-3"><i className="bi bi-plus-circle me-2"></i>Añadir Ejercicio</h5>
-        <form onSubmit={handleAddEjercicio}>
-          <div className="row g-3 align-items-end">
-            <div className="col-md-5">
-              <label className="form-label">Ejercicio</label>
-              <input
-                className="form-control"
-                value={ejercicio.nombre}
-                onChange={(e) => setEjercicio({ ...ejercicio, nombre: e.target.value })}
-                placeholder="Ej: Press de banca"
-                required
-              />
-            </div>
-            <div className="col-md-3">
-              <label className="form-label">Músculo</label>
-              <select
-                className="form-select"
-                value={ejercicio.musculo}
-                onChange={(e) => setEjercicio({ ...ejercicio, musculo: e.target.value })}
-              >
-                {MUSCULOS.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <div className="col-md-2">
-              <label className="form-label">Series</label>
-              <input type="number" min="1" className="form-control" value={ejercicio.series}
-                onChange={(e) => setEjercicio({ ...ejercicio, series: e.target.value })} />
-            </div>
-            <div className="col-12">
-              <button type="submit" className="btn btn-primary">
-                <i className="bi bi-plus-lg me-2"></i>Añadir a la rutina
-              </button>
-              <small className="text-muted ms-3">
-                <i className="bi bi-magic me-1"></i>
-                Descanso automático: <strong>{formatearDescanso(descansoEstimado(ejercicio.musculo, ejercicio.series))}</strong>
-              </small>
-            </div>
-          </div>
-        </form>
-      </div>
+      <section className="panel routine-form-panel" style={{ marginTop: 16 }}>
+        <div className="panel-head">
+          <h3>Añadir ejercicio</h3>
+          <span className="tag tag-lime">Se guarda al momento</span>
+        </div>
 
-      <div className="dashboard-card">
-        <h5 className="fw-bold mb-3">Ejercicios de la rutina</h5>
+        <div className="routine-form-body">
+          <form onSubmit={handleAddEjercicio}>
+            <div className="form-grid">
+              <div className="field field--full">
+                <label htmlFor="ejercicio-nombre">Ejercicio</label>
+                <input
+                  id="ejercicio-nombre"
+                  className="form-control"
+                  value={ejercicio.nombre}
+                  onChange={(e) => setEjercicio({ ...ejercicio, nombre: e.target.value })}
+                  placeholder="Ej: Press de banca"
+                  required
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="ejercicio-musculo">Músculo</label>
+                <select
+                  id="ejercicio-musculo"
+                  className="form-select"
+                  value={ejercicio.musculo}
+                  onChange={(e) => setEjercicio({ ...ejercicio, musculo: e.target.value })}
+                >
+                  {MUSCULOS.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+
+              <div className="field">
+                <label htmlFor="ejercicio-series">Series</label>
+                <input
+                  id="ejercicio-series"
+                  type="number"
+                  min="1"
+                  className="form-control"
+                  value={ejercicio.series}
+                  onChange={(e) => setEjercicio({ ...ejercicio, series: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary">
+                <Icon nombre="plus" /> Añadir a la rutina
+              </button>
+              <span className="auto-rest">
+                <Icon nombre="clock" />
+                Descanso automático:
+                <strong>{formatearDescanso(descansoEstimado(ejercicio.musculo, ejercicio.series))}</strong>
+              </span>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section className="panel" style={{ marginTop: 16 }}>
+        <div className="panel-head">
+          <h3>Ejercicios de la rutina</h3>
+          <span className="tag tag-ink">{rutina.ejercicios.length}</span>
+        </div>
 
         {rutina.ejercicios.length === 0 ? (
-          <div className="text-center py-5 text-muted">
-            <p className="fs-2 mb-2">📋</p>
-            <p>Aún no hay ejercicios. Añade el primero con el formulario de arriba.</p>
+          <div className="empty-state" style={{ margin: 19 }}>
+            <span className="empty-icon"><Icon nombre="list" /></span>
+            <h3>Aún no hay ejercicios</h3>
+            <p>Añade el primero con el formulario de arriba y quedará guardado en la rutina.</p>
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="table align-middle mb-0">
+          <div className="table-wrap">
+            <table className="table">
               <thead>
-                <tr className="text-muted">
+                <tr>
                   <th>#</th>
                   <th>Ejercicio</th>
                   <th>Músculo</th>
-                  <th className="text-center">Series</th>
-                  <th className="text-center">Descanso</th>
-                  <th></th>
+                  <th style={{ textAlign: 'center' }}>Series</th>
+                  <th style={{ textAlign: 'center' }}>Descanso</th>
+                  <th aria-label="Acciones" />
                 </tr>
               </thead>
               <tbody>
                 {rutina.ejercicios.map((ej, index) => (
                   <tr key={ej.id}>
-                    <td className="text-muted">{index + 1}</td>
+                    <td className="muted-cell">{String(index + 1).padStart(2, '0')}</td>
                     <td className="fw-semibold">{ej.nombre}</td>
-                    <td><span className="badge bg-light text-dark">{ej.musculo}</span></td>
-                    <td className="text-center">{ej.series}</td>
-                    <td className="text-center">{ej.descanso}s</td>
-                    <td className="text-end">
-                      <button className="btn btn-sm btn-outline-secondary me-1" title="Editar"
-                        onClick={() => handleActualizarEjercicio(ej)}>
-                        <i className="bi bi-pencil"></i>
-                      </button>
-                      <button className="btn btn-sm btn-outline-danger" title="Eliminar"
-                        onClick={() => handleEliminarEjercicio(ej)}>
-                        <i className="bi bi-trash"></i>
-                      </button>
+                    <td><span className="tag tag-ghost">{ej.musculo}</span></td>
+                    <td style={{ textAlign: 'center' }}>{ej.series}</td>
+                    <td style={{ textAlign: 'center' }}>{formatearDescanso(ej.descanso)}</td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title="Editar nombre y series"
+                          onClick={() => handleActualizarEjercicio(ej)}
+                        >
+                          <Icon nombre="edit" />
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-btn icon-btn--danger"
+                          title="Eliminar ejercicio"
+                          onClick={() => handleEliminarEjercicio(ej)}
+                        >
+                          <Icon nombre="trash" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -303,7 +378,7 @@ export default function RutinaDetalle() {
             </table>
           </div>
         )}
-      </div>
-    </div>
+      </section>
+    </>
   )
 }

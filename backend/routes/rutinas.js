@@ -42,7 +42,7 @@ router.get('/', async (req, res) => {
     const rutinas = await db.all(
       `SELECT r.*,
         (SELECT COUNT(*) FROM ejercicios WHERE rutina_id = r.id) as num_ejercicios,
-        (SELECT COUNT(*) FROM entrenamientos WHERE rutina_id = r.id) as veces_entrenada
+        (SELECT COUNT(*) FROM sesiones WHERE rutina_id = r.id AND finalizada = 1) as veces_entrenada
        FROM rutinas r
        WHERE r.user_id = ?
        ORDER BY r.fecha_creacion DESC`,

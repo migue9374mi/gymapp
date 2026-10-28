@@ -2,10 +2,16 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { mensajeDeError } from '../api/axios'
+import AuthShell from '../components/AuthShell'
+import Icon from '../components/Icon'
+import { Avisos } from '../components/ui'
+
+const CLAVE_RECORDAR = 'gymapp_recordar_email'
 
 function Login() {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => localStorage.getItem(CLAVE_RECORDAR) || '')
   const [password, setPassword] = useState('')
+  const [recordar, setRecordar] = useState(() => Boolean(localStorage.getItem(CLAVE_RECORDAR)))
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
@@ -18,6 +24,8 @@ function Login() {
 
     try {
       await login(email, password)
+      if (recordar) localStorage.setItem(CLAVE_RECORDAR, email)
+      else localStorage.removeItem(CLAVE_RECORDAR)
       navigate('/dashboard')
     } catch (err) {
       setError(mensajeDeError(err, 'Error al iniciar sesión'))
@@ -27,78 +35,66 @@ function Login() {
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2 className="text-center">¡Bienvenido de nuevo!</h2>
-        <p className="subtitle text-center">Inicia sesión para continuar tu progreso</p>
+    <AuthShell
+      eyebrow="Bienvenido de nuevo"
+      titulo={<>Entra y<br />entrena</>}
+      intro="Nos alegra verte. Tu plan de hoy está listo cuando tú lo estés."
+    >
+      <Avisos error={error} />
 
-        {error && (
-          <div className="alert alert-danger" role="alert">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label htmlFor="email" className="form-label">Email</label>
-            <input
-              type="email"
-              className="form-control"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="password" className="form-label">Contraseña</label>
-            <input
-              type="password"
-              className="form-control"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-            <div className="text-end mt-2">
-              <Link
-                to="/olvide-contrasena"
-                style={{ color: 'var(--rojo)', fontSize: '0.9rem' }}
-              >
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary w-100"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2"></span>
-                Iniciando sesión...
-              </>
-            ) : (
-              'Iniciar Sesión'
-            )}
-          </button>
-        </form>
-
-        <div className="text-center mt-4">
-          <p className="mb-0">
-            ¿No tienes cuenta?{' '}
-            <Link to="/register" style={{ color: 'var(--rojo)', fontWeight: 600 }}>
-              Regístrate aquí
-            </Link>
-          </p>
+      <form className="login-form" onSubmit={handleSubmit}>
+        <div className="field">
+          <label htmlFor="email">Correo</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="tu@email.com"
+            autoComplete="email"
+            required
+          />
         </div>
-      </div>
-    </div>
+
+        <div className="field">
+          <label htmlFor="password">Contraseña</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            required
+          />
+        </div>
+
+        <div className="login-row">
+          <label className="check-inline">
+            <input
+              type="checkbox"
+              checked={recordar}
+              onChange={(e) => setRecordar(e.target.checked)}
+            />
+            Recordarme
+          </label>
+          <Link to="/olvide-contrasena">¿Olvidaste la contraseña?</Link>
+        </div>
+
+        <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={loading}>
+          {loading ? (
+            <><span className="mini-spinner" /> Entrando…</>
+          ) : (
+            <>Entrar <Icon nombre="arrow-right" /></>
+          )}
+        </button>
+      </form>
+
+      <p className="login-note">Acceso privado · Solo para ti y los tuyos</p>
+      <p className="auth-switch">
+        ¿No tienes cuenta? <Link to="/register">Crear una cuenta</Link>
+      </p>
+    </AuthShell>
   )
 }
 

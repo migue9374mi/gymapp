@@ -2,7 +2,25 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
 import { useAuth } from '../context/AuthContext'
-import { CATEGORIAS, MUSCULOS, COLOR_CATEGORIA } from './Rutinas'
+import { CATEGORIAS } from './Rutinas'
+import Icon from '../components/Icon'
+import { Avisos, Cargando } from '../components/ui'
+
+function etiquetaCategoria(valor) {
+  return CATEGORIAS.find((c) => c.valor === valor)?.label || valor
+}
+
+function tono(categoria) {
+  if (categoria === 'push' || categoria === 'cardio') return 'tag-red'
+  if (categoria === 'pull') return 'tag-lime'
+  if (categoria === 'pierna') return 'tag-blue'
+  if (categoria === 'full_body' || categoria === 'core') return 'tag-yellow'
+  return 'tag-ink'
+}
+
+function inicial(nombre) {
+  return String(nombre || '?').trim().charAt(0).toUpperCase()
+}
 
 export default function ComunidadDetalle() {
   const { id } = useParams()
@@ -89,204 +107,214 @@ export default function ComunidadDetalle() {
   }
 
   if (cargando) {
-    return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-danger" role="status"></div>
-      </div>
-    )
+    return <Cargando texto="Abriendo la rutina…" />
   }
 
   if (error && !datos) {
     return (
-      <div className="container py-5 text-center">
-        <p className="fs-1">😕</p>
-        <h5>{error}</h5>
-        <Link to="/comunidad" className="btn btn-primary mt-3">Volver a la comunidad</Link>
-      </div>
+      <>
+        <button className="back-link" type="button" onClick={() => navigate('/comunidad')}>
+          <Icon nombre="arrow-left" /> Volver a la comunidad
+        </button>
+        <div className="empty-state">
+          <span className="empty-icon"><Icon nombre="warning" /></span>
+          <h3>No encontramos esta rutina</h3>
+          <p>{error}</p>
+          <Link to="/comunidad" className="btn btn-primary">Volver a la comunidad</Link>
+        </div>
+      </>
     )
   }
 
   const { rutina, ejercicios, comentarios, esMia } = datos
+  const totalSeries = ejercicios.reduce((s, e) => s + e.series, 0)
+  const descansoTotal = Math.round(ejercicios.reduce((s, e) => s + e.series * e.descanso, 0) / 60)
+  const musculos = [...new Set(ejercicios.map((e) => e.musculo))]
 
   return (
-    <div className="container py-4">
-      <button className="btn btn-link text-decoration-none px-0 mb-3" onClick={() => navigate('/comunidad')}>
-        <i className="bi bi-arrow-left me-2"></i>Volver a la comunidad
+    <>
+      <button className="back-link" type="button" onClick={() => navigate('/comunidad')}>
+        <Icon nombre="arrow-left" /> Volver a la comunidad
       </button>
 
-      {error && <div className="alert alert-danger">{error}</div>}
-      {exito && <div className="alert alert-success"><i className="bi bi-check-circle me-2"></i>{exito}</div>}
+      <Avisos error={error} exito={exito} />
 
-      <div className="row g-4">
-        <div className="col-lg-8">
-          {/* Info de la rutina */}
-          <div className="dashboard-card mb-4">
-            <span className={`badge bg-${COLOR_CATEGORIA[rutina.categoria] || 'secondary'} mb-2`}>
-              {CATEGORIAS.find((c) => c.valor === rutina.categoria)?.label || rutina.categoria}
-            </span>
-            <h2 className="fw-bold mb-1" style={{ color: 'var(--tinta)' }}>{rutina.nombre}</h2>
-            <p className="text-muted mb-3">
-              <i className="bi bi-person me-1"></i>Creada por <strong>{rutina.autor}</strong>
-              {esMia && <span className="badge bg-info ms-2">Esta es tu rutina</span>}
-            </p>
-            <p>{rutina.descripcion || 'Sin descripción'}</p>
+      <section className="community-hero">
+        <div className="tag-row">
+          <span className={`tag ${tono(rutina.categoria)}`}>{etiquetaCategoria(rutina.categoria)}</span>
+          {esMia && <span className="tag tag-lime">Tu rutina</span>}
+        </div>
 
-            <div className="d-flex gap-2 flex-wrap mt-3">
-              <button
-                className={`btn ${rutina.me_gusta ? 'btn-danger' : 'btn-outline-danger'}`}
-                onClick={toggleLike}
-              >
-                <i className={`bi ${rutina.me_gusta ? 'bi-heart-fill' : 'bi-heart'} me-2`}></i>
-                {rutina.num_likes} {rutina.num_likes === 1 ? 'me gusta' : 'me gusta'}
-              </button>
+        <h1>{rutina.nombre}</h1>
+        <p>{rutina.descripcion || 'Sin descripción todavía.'}</p>
 
-              {!esMia && (
-                <button className="btn btn-success" onClick={copiar}>
-                  <i className="bi bi-copy me-2"></i>Copiar a mi cuenta
-                </button>
-              )}
+        <div className="community-author">
+          <span className="community-author-avatar" aria-hidden="true">{inicial(rutina.autor)}</span>
+          <span>Creada por <strong>{rutina.autor}</strong></span>
+        </div>
 
-              {esMia && (
-                <Link to={`/rutinas/${rutina.id}`} className="btn btn-outline-primary">
-                  <i className="bi bi-pencil me-2"></i>Gestionar en mis rutinas
-                </Link>
-              )}
+        <div className="community-actions-row">
+          <button
+            type="button"
+            className={`btn ${rutina.me_gusta ? 'btn-lime' : 'btn-ghost'}`}
+            onClick={toggleLike}
+            aria-pressed={Boolean(rutina.me_gusta)}
+          >
+            <Icon nombre="heart" /> {rutina.num_likes} me gusta
+          </button>
+
+          {!esMia && (
+            <button type="button" className="btn btn-primary" onClick={copiar}>
+              <Icon nombre="copy" /> Copiar a mi cuenta
+            </button>
+          )}
+
+          {esMia && (
+            <Link to={`/rutinas/${rutina.id}`} className="btn btn-primary">
+              <Icon nombre="edit" /> Gestionar en mis rutinas
+            </Link>
+          )}
+        </div>
+      </section>
+
+      <div className="community-detail">
+        <div className="community-detail-main">
+          <section className="panel">
+            <div className="panel-head">
+              <h3>Ejercicios</h3>
+              <span className="tag tag-ink">{ejercicios.length}</span>
             </div>
-          </div>
-
-          {/* Ejercicios */}
-          <div className="dashboard-card mb-4">
-            <h5 className="fw-bold mb-3">
-              <i className="bi bi-list-check me-2"></i>Ejercicios ({ejercicios.length})
-            </h5>
 
             {ejercicios.length === 0 ? (
-              <p className="text-muted">Esta rutina todavia no tiene ejercicios</p>
+              <p className="panel-loading">Esta rutina todavía no tiene ejercicios.</p>
             ) : (
-              <div className="table-responsive">
-                <table className="table align-middle mb-0">
+              <div className="table-wrap">
+                <table className="table">
                   <thead>
-                    <tr className="text-muted">
+                    <tr>
                       <th>#</th>
                       <th>Ejercicio</th>
                       <th>Músculo</th>
-                      <th className="text-center">Series</th>
-                      <th className="text-center">Descanso</th>
+                      <th style={{ textAlign: 'center' }}>Series</th>
+                      <th style={{ textAlign: 'center' }}>Descanso</th>
                     </tr>
                   </thead>
                   <tbody>
                     {ejercicios.map((e, i) => (
                       <tr key={e.id}>
-                        <td className="text-muted">{i + 1}</td>
+                        <td className="muted-cell">{String(i + 1).padStart(2, '0')}</td>
                         <td className="fw-semibold">{e.nombre}</td>
-                        <td><span className="badge bg-light text-dark text-capitalize">{e.musculo}</span></td>
-                        <td className="text-center">{e.series}</td>
-                        <td className="text-center">{e.descanso}s</td>
+                        <td><span className="tag tag-ghost">{e.musculo}</span></td>
+                        <td style={{ textAlign: 'center' }}>{e.series}</td>
+                        <td style={{ textAlign: 'center' }}>{e.descanso}s</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Comentarios */}
-          <div className="dashboard-card">
-            <h5 className="fw-bold mb-3">
-              <i className="bi bi-chat-left-text me-2"></i>
-              Comentarios ({comentarios.length})
-            </h5>
+          <section className="panel">
+            <div className="panel-head">
+              <h3>Comentarios</h3>
+              <span className="tag tag-ink">{comentarios.length}</span>
+            </div>
 
-            <form onSubmit={enviarComentario} className="mb-4">
-              <textarea
-                className="form-control mb-2"
-                rows="2"
-                placeholder="Escribe tu opinion o una pregunta..."
-                value={comentario}
-                onChange={(e) => setComentario(e.target.value)}
-                required
-              />
-              <button type="submit" className="btn btn-primary btn-sm" disabled={enviando}>
-                {enviando ? 'Enviando...' : <><i className="bi bi-send me-1"></i>Comentar</>}
-              </button>
-            </form>
+            <div className="panel-body">
+              <form className="comment-form" onSubmit={enviarComentario}>
+                <label className="field-label" htmlFor="comentario">Deja tu opinión</label>
+                <textarea
+                  id="comentario"
+                  className="form-control"
+                  rows="2"
+                  placeholder="Escribe una opinión o una pregunta…"
+                  value={comentario}
+                  onChange={(e) => setComentario(e.target.value)}
+                  required
+                />
+                <div className="form-actions" style={{ marginTop: 8 }}>
+                  <button type="submit" className="btn btn-primary btn-sm" disabled={enviando}>
+                    {enviando ? (
+                      <><span className="mini-spinner" /> Enviando…</>
+                    ) : (
+                      <><Icon nombre="send" /> Comentar</>
+                    )}
+                  </button>
+                </div>
+              </form>
 
-            {comentarios.length === 0 ? (
-              <div className="text-center py-4 text-muted">
-                <p className="fs-3 mb-1">💬</p>
-                <p className="mb-0">Aun no hay comentarios. Se el primero</p>
-              </div>
-            ) : (
-              <div className="d-flex flex-column gap-3">
-                {comentarios.map((c) => (
-                  <div key={c.id} className="d-flex gap-2">
-                    <div
-                      className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-                      style={{ width: '36px', height: '36px', background: 'var(--rojo)' }}
-                    >
-                      {c.autor.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-grow-1">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <strong className="small">{c.autor}</strong>
-                        <div className="d-flex align-items-center gap-2">
-                          <small className="text-muted">{new Date(c.fecha).toLocaleDateString('es-ES')}</small>
-                          {c.autor === user?.nombre && (
-                            <button
-                              className="btn btn-sm btn-outline-danger py-0 px-1"
-                              onClick={() => borrarComentario(c.id)}
-                              title="Eliminar comentario"
-                            >
-                              <i className="bi bi-trash"></i>
-                            </button>
-                          )}
+              {comentarios.length === 0 ? (
+                <p className="panel-loading" style={{ padding: '18px 0 0' }}>
+                  Aún no hay comentarios. Sé el primero.
+                </p>
+              ) : (
+                <div className="comment-list">
+                  {comentarios.map((c) => (
+                    <article className="comment" key={c.id}>
+                      <span className="comment-avatar" aria-hidden="true">{inicial(c.autor)}</span>
+                      <div className="comment-body">
+                        <div className="comment-head">
+                          <strong>{c.autor}</strong>
+                          <div className="comment-tools">
+                            <time dateTime={c.fecha}>{new Date(c.fecha).toLocaleDateString('es-ES')}</time>
+                            {c.autor === user?.nombre && (
+                              <button
+                                type="button"
+                                className="icon-btn icon-btn--danger"
+                                onClick={() => borrarComentario(c.id)}
+                                title="Eliminar comentario"
+                              >
+                                <Icon nombre="trash" />
+                              </button>
+                            )}
+                          </div>
                         </div>
+                        <p>{c.texto}</p>
                       </div>
-                      <p className="mb-0 small">{c.texto}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Lateral */}
-        <div className="col-lg-4">
-          <div className="dashboard-card">
-            <h5 className="fw-bold mb-3">Resumen</h5>
-            <div className="d-flex justify-content-between py-2 border-bottom">
-              <span className="text-muted">Ejercicios</span>
-              <strong>{ejercicios.length}</strong>
-            </div>
-            <div className="d-flex justify-content-between py-2 border-bottom">
-              <span className="text-muted">Series totales</span>
-              <strong>{ejercicios.reduce((s, e) => s + e.series, 0)}</strong>
-            </div>
-            <div className="d-flex justify-content-between py-2 border-bottom">
-              <span className="text-muted">Descanso total</span>
-              <strong>
-                {Math.round(ejercicios.reduce((s, e) => s + e.series * e.descanso, 0) / 60)} min
-              </strong>
-            </div>
-            <div className="d-flex justify-content-between py-2">
-              <span className="text-muted">Me gusta</span>
-              <strong>{rutina.num_likes}</strong>
-            </div>
-
-            {ejercicios.length > 0 && (
-              <div className="mt-4 pt-3 border-top">
-                <h6 className="fw-bold mb-2">Musculos que trabaja</h6>
-                <div className="d-flex gap-1 flex-wrap">
-                  {[...new Set(ejercicios.map((e) => e.musculo))].map((m) => (
-                    <span key={m} className="badge bg-light text-dark text-capitalize border">{m}</span>
+                    </article>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </section>
         </div>
+
+        <aside className="community-detail-side">
+          <section className="panel">
+            <div className="panel-head">
+              <h3>Resumen</h3>
+              <span className="tag tag-lime">Datos</span>
+            </div>
+
+            <div className="panel-body">
+              <div className="summary-list">
+                <div className="summary-row"><span>Ejercicios</span><strong>{ejercicios.length}</strong></div>
+                <div className="summary-row"><span>Series totales</span><strong>{totalSeries}</strong></div>
+                <div className="summary-row"><span>Descanso total</span><strong>{descansoTotal} min</strong></div>
+                <div className="summary-row"><span>Me gusta</span><strong>{rutina.num_likes}</strong></div>
+              </div>
+
+              {musculos.length > 0 && (
+                <div className="form-section">
+                  <span className="field-label">Músculos que trabaja</span>
+                  <div className="tag-row">
+                    {musculos.map((m) => <span key={m} className="tag tag-ghost">{m}</span>)}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <div className="side-note">
+            <h4>Entrena con cabeza</h4>
+            <p>
+              Copia la rutina a tu cuenta y ajústala a tu material. Lo que funciona
+              es la constancia, no la prisa.
+            </p>
+          </div>
+        </aside>
       </div>
-    </div>
+    </>
   )
 }

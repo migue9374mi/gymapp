@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Icon from './Icon'
 
 // Salida del error.
 // Importante: navegar con React Router, NO con window.location.href.
@@ -10,13 +11,13 @@ function VolverAlInicio({ alPulsarSalir }) {
 
   return (
     <button
-      className="btn btn-primary mt-3"
+      className="btn btn-primary"
       onClick={() => {
         alPulsarSalir()
         navigate('/dashboard', { replace: true })
       }}
     >
-      <i className="bi bi-house me-2"></i>Volver al inicio
+      <Icon nombre="home" /> Volver al inicio
     </button>
   )
 }
@@ -38,39 +39,41 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.error) {
       return (
-        <div className="container py-5">
-          <div className="dashboard-card">
-            <h4 className="fw-bold text-danger mb-3">
-              <i className="bi bi-exclamation-octagon me-2"></i>
-              Algo salio mal en esta pagina
-            </h4>
+        <div className="empty-state" style={{ marginTop: 32 }}>
+          <span className="empty-icon"><Icon nombre="warning" /></span>
+          <h3>Algo salió mal en esta página</h3>
+          <p>
+            Puedes volver al inicio. Si quieres ayudar a encontrar el problema,
+            copia el mensaje de abajo.
+          </p>
 
-            <p className="text-muted mb-3">
-              Puedes copiar este mensaje para ayudar a encontrar el problema:
-            </p>
+          <pre
+            style={{
+              width: '100%',
+              maxWidth: 640,
+              maxHeight: 260,
+              overflow: 'auto',
+              margin: '8px 0 0',
+              padding: 13,
+              borderRadius: 10,
+              background: 'var(--ink)',
+              color: 'var(--lime)',
+              fontSize: 10,
+              lineHeight: 1.5,
+              textAlign: 'left',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+            }}
+          >
+            {this.state.error.message || String(this.state.error)}
+            {this.state.info?.componentStack ? `\n${this.state.info.componentStack}` : ''}
+          </pre>
 
-            <pre
-              className="p-3 rounded"
-              style={{
-                background: 'var(--tinta)',
-                color: 'var(--rojo)',
-                fontSize: '0.8rem',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                maxHeight: '300px',
-                overflow: 'auto',
-              }}
-            >
-              {this.state.error.message || String(this.state.error)}
-              {this.state.info?.componentStack ? `\n${this.state.info.componentStack}` : ''}
-            </pre>
-
-            <VolverAlInicio
-              alPulsarSalir={() => {
-                this.setState({ error: null, info: null })
-              }}
-            />
-          </div>
+          <VolverAlInicio
+            alPulsarSalir={() => {
+              this.setState({ error: null, info: null })
+            }}
+          />
         </div>
       )
     }

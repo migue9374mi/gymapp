@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import api, { mensajeDeError } from '../api/axios'
 import useDescanso from '../hooks/useDescanso'
@@ -9,6 +9,7 @@ import {
   parsearDescanso,
   porcentajeRestante,
 } from '../nativa/descansoLogica'
+import Icon from './Icon'
 
 // --- Persistencia de la sesion activa ---
 const CLAVE_SESION = 'gymapp_sesion_activa'
@@ -22,16 +23,10 @@ function leerSesionActiva() {
   }
 }
 
-const COLOR_ESTADO = {
-  rojo: 'var(--rojo)',
-  amarillo: 'var(--ambar)',
-  verde: 'var(--verde)',
-}
-
 const ETIQUETA_ESTADO = {
   rojo: 'Sin iniciar',
   amarillo: 'En progreso',
-  verde: 'Terminado',
+  verde: 'Completado',
 }
 
 function formatearCronometro(segundos) {
@@ -43,15 +38,16 @@ function formatearCronometro(segundos) {
   return `${pad(m)}:${pad(s)}`
 }
 
-export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada }) {
-  const [ejercicioSel, setEjercicioSel] = useState(null)
-  const [peso, setPeso] = useState('')
-  const [reps, setReps] = useState('')
-  const [error, setError] = useState('')
-  const [guardando, setGuardando] = useState(false)
+function numero(valor) {
+  return Number(valor || 0).toLocaleString('es-ES', { maximumFractionDigits: 1 })
+}
 
-  // Descanso entre series. Todo el estado vive en useDescanso; aqui solo
-  // se pinta y se conecta con el boton de registrar serie.
+export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada }) {
+  const [ejercicioAbierto, setEjercicioAbierto] = useState(null)
+  const [error, setError] = useState('')
+  const [guardandoSerie, setGuardandoSerie] = useState(null)
+  const [borradores, setBorradores] = useState({})
+
   const {
     estado: estadoDescanso,
     restanteMs,
@@ -68,13 +64,9 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
     cambiarAuto,
   } = useDescanso(sesion.id)
 
-  // Casilla de "Otro" tiempo: se escribe "90" o "1:30".
   const [otroDescanso, setOtroDescanso] = useState('')
   const [errorDescanso, setErrorDescanso] = useState('')
 
-  // Cronometro: se basa en la marca de tiempo real del inicio, guardada en
-  // localStorage. Asi sigue corriendo aunque cierres la pagina o cambies de
-  // apartado: al volver, elapsed = ahora - inicio (no se reinicia).
   const [segundos, setSegundos] = useState(() => {
     const g = leerSesionActiva()
     return g?.inicioMs ? Math.floor((Date.now() - g.inicioMs) / 1000) : 0
@@ -83,86 +75,98 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
   useEffect(() => {
     const t = setInterval(() => {
       const g = leerSesionActiva()
-      if (g?.inicioMs) {
-        setSegundos(Math.floor((Date.now() - g.inicioMs) / 1000))
-      }
+      if (g?.inicioMs) setSegundos(Math.floor((Date.now() - g.inicioMs) / 1000))
     }, 1000)
     return () => clearInterval(t)
   }, [])
 
-  // Cuando cambia el ejercicio seleccionado, precargar el peso de la ultima serie
-  useEffect(() => {
-    if (!ejercicioSel) return
-    const regs = ejercicioSel.series_registradas || []
-    if (regs.length > 0) {
-      const ultima = regs[regs.length - 1]
-      // Los campos son controlados: nunca pueden quedar a null.
-      setPeso(ultima.peso ?? '')
-      setReps(ultima.reps ?? ejercicioSel.reps ?? '')
-    } else {
-      setPeso(ejercicioSel.peso || '')
-      setReps(ejercicioSel.reps || '')
-    }
-  }, [ejercicioSel?.id])
+  const ejercicioSel = sesion.ejercicios.find((e) => e.id === ejercicioAbierto) || null
+
+  const totalSeries = sesion.ejercicios.reduce((t, e) => t + Number(e.series || 0), 0)
+  const hechasSeries = sesion.ejercicios.reduce((t, e) => t + (e.series_registradas?.length || 0), 0)
+  const porcentaje = totalSeries ? Math.round((hechasSeries / totalSeries) * 100) : 0
+  const volumen = sesion.ejercicios.reduce(
+    (total, e) => total + (e.series_registradas || []).reduce((t, s) => t + Number(s.peso || 0) * Number(s.reps || e.reps || 0), 0),
+    0
+  )
 
   const aplicarOtroDescanso = () => {
     const texto = otroDescanso.trim()
     if (!texto) return
-
-    const segundos = parsearDescanso(texto)
-    if (!segundos) {
+    const segundosNuevos = parsearDescanso(texto)
+    if (!segundosNuevos) {
       setErrorDescanso('Escribe los segundos (90) o los minutos (1:30)')
       return
     }
-
-    cambiarDuracion(segundos)
+    cambiarDuracion(segundosNuevos)
     setOtroDescanso('')
     setErrorDescanso('')
   }
 
-  const registrarSerie = async (numeroSerie) => {
-    if (!ejercicioSel) return
+  const valorBorrador = (ejercicio, numeroSerie, campo) => {
+    const registrada = (ejercicio.series_registradas || []).find((s) => s.numero_serie === numeroSerie)
+    if (registrada) return registrada[campo] ?? ''
+    const clave = `${ejercicio.id}-${numeroSerie}`
+    if (borradores[clave]?.[campo] !== undefined) return borradores[clave][campo]
+    return campo === 'peso' ? (ejercicio.peso ?? '') : (ejercicio.reps ?? '')
+  }
+
+  const cambiarBorrador = (ejercicio, numeroSerie, campo, valor) => {
+    const clave = `${ejercicio.id}-${numeroSerie}`
+    setBorradores((prev) => ({
+      ...prev,
+      [clave]: { ...(prev[clave] || {}), [campo]: valor },
+    }))
+  }
+
+  const registrarSerie = async (ejercicio, numeroSerie) => {
+    const peso = valorBorrador(ejercicio, numeroSerie, 'peso')
+    const reps = valorBorrador(ejercicio, numeroSerie, 'reps')
+
     if (peso === '' || peso === null) {
       setError('Escribe el peso de la serie')
       return
     }
-    setGuardando(true)
+
+    setGuardandoSerie(`${ejercicio.id}-${numeroSerie}`)
     setError('')
     try {
       await api.post(`/entrenamientos/sesiones/${sesion.id}/series`, {
-        ejercicio_id: ejercicioSel.id,
+        ejercicio_id: ejercicio.id,
         numero_serie: numeroSerie,
         peso: parseFloat(peso),
         reps: reps ? parseInt(reps) : null,
       })
       onSesionCambiada()
-
-      // Serie apuntada: empieza el descanso. Si el usuario ha apagado el
-      // inicio automatico, esto no hace nada.
       iniciarAutomatico()
     } catch (err) {
       setError(mensajeDeError(err, 'Error al registrar la serie'))
     } finally {
-      setGuardando(false)
+      setGuardandoSerie(null)
     }
   }
 
-  const borrarSerie = async (ejercicioId, numero) => {
+  const borrarSerie = async (ejercicio, numeroSerie) => {
+    setGuardandoSerie(`${ejercicio.id}-${numeroSerie}`)
     try {
-      await api.delete(`/entrenamientos/sesiones/${sesion.id}/series/${ejercicioId}/${numero}`)
+      await api.delete(`/entrenamientos/sesiones/${sesion.id}/series/${ejercicio.id}/${numeroSerie}`)
       onSesionCambiada()
     } catch (err) {
       setError(mensajeDeError(err, 'Error al borrar la serie'))
+    } finally {
+      setGuardandoSerie(null)
     }
+  }
+
+  const alternarSerie = (ejercicio, numeroSerie, hecha) => {
+    if (hecha) borrarSerie(ejercicio, numeroSerie)
+    else registrarSerie(ejercicio, numeroSerie)
   }
 
   const finalizar = async () => {
     const fin = new Date()
     const horaFin = `${String(fin.getHours()).padStart(2, '0')}:${String(fin.getMinutes()).padStart(2, '0')}`
 
-    // Minutos reales desde que empezo la sesion. Se calculan con la marca
-    // de tiempo guardada, no restando dos horas HH:MM: si empiezas y acabas
-    // en el mismo minuto, esa resta daria 24 horas.
     const guardada = leerSesionActiva()
     const inicioMs = Number(guardada?.inicioMs)
     const duracionMinutos =
@@ -179,9 +183,6 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
         duracion_minutos: duracionMinutos,
       })
 
-      // Si el servidor todavia no acepta la duracion de la app, corrige la
-      // sesion ajustando la hora de inicio. Asi el historial no se queda en
-      // 24 h aunque el backend tarde en actualizarse.
       let datosFinales = res.data
       if (duracionMinutos !== undefined && Number(res.data.duracion_minutos) !== duracionMinutos) {
         try {
@@ -202,8 +203,6 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
         }
       }
 
-      // Si la rutina se acaba, el descanso ya no tiene sentido: se para y
-      // se cancela el aviso que pudiera estar programado.
       detenerDescanso()
       onFinalizada(datosFinales)
     } catch (err) {
@@ -212,266 +211,223 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
   }
 
   const incompletos = sesion.ejercicios.filter((e) => e.estado !== 'verde').length
-  const terminados = sesion.ejercicios.length - incompletos
 
   return (
     <div className={estadoDescanso !== 'inactivo' ? 'sesion-con-descanso' : undefined}>
-      {/* Cronometro */}
-      <div
-        className="d-flex justify-content-between align-items-center p-3 rounded mb-3"
-        style={{ background: 'var(--tinta)', color: 'white' }}
-      >
-        <div>
-          <div className="small" style={{ opacity: 0.7 }}>Tiempo transcurrido</div>
-          <div className="fs-4 fw-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {formatearCronometro(segundos)}
+      <div className="session-bar">
+        <div className="session-progress">
+          <div className="session-progress-top">
+            <span>Progreso de la sesión</span>
+            <span>{hechasSeries} / {totalSeries} series</span>
+          </div>
+          <div className="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={porcentaje}>
+            <div className="progress-fill" style={{ width: `${porcentaje}%` }} />
           </div>
         </div>
-        <div className="text-end">
-          <div className="small" style={{ opacity: 0.7 }}>Progreso</div>
-          <div className="fs-5 fw-bold">
-            {terminados}/{sesion.ejercicios.length}
-          </div>
+        <div className="session-stat">
+          <strong>{formatearCronometro(segundos)}</strong>
+          <span>Tiempo</span>
+        </div>
+        <div className="session-stat">
+          <strong>{hechasSeries}/{totalSeries}</strong>
+          <span>Series</span>
+        </div>
+        <div className="session-stat">
+          <strong>{numero(volumen)}</strong>
+          <span>Kg movidos</span>
         </div>
       </div>
 
-      <div className="progress mb-3">
-        <div
-          className="progress-bar bg-success"
-          style={{ width: `${sesion.ejercicios.length ? (terminados / sesion.ejercicios.length) * 100 : 0}%` }}
-        ></div>
-      </div>
-
-      {error && <div className="alert alert-danger py-2">{error}</div>}
+      {error && <div className="alert alert-danger">{error}</div>}
 
       {incompletos > 0 && (
-        <div className="alert alert-warning py-2 small">
-          <i className="bi bi-exclamation-triangle me-1"></i>
-          Te faltan {incompletos} ejercicio(s) por completar
+        <div className="session-alert">
+          <Icon nombre="info" />
+          <span>Te {incompletos === 1 ? 'falta 1 ejercicio' : `faltan ${incompletos} ejercicios`} por completar. Puedes finalizar igualmente.</span>
         </div>
       )}
 
-      {/* Ejercicio seleccionado: input de peso */}
-      {ejercicioSel && (
-        <div
-          className="p-3 rounded mb-3"
-          style={{
-            background: 'var(--crema)',
-            border: '3px solid var(--tinta)',
-            boxShadow: '4px 4px 0 var(--tinta)',
-          }}
-        >
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <strong>{ejercicioSel.nombre}</strong>
-            <button className="btn btn-sm btn-outline-secondary" onClick={() => setEjercicioSel(null)}>
-              <i className="bi bi-x-lg"></i>
-            </button>
-          </div>
+      <div className="exercise-list">
+        {sesion.ejercicios.map((ej, indice) => {
+          const registradas = ej.series_registradas || []
+          const hechas = registradas.length
+          const completo = hechas >= ej.series
+          const abierto = ejercicioAbierto === ej.id
+          const estado = completo ? 'done' : abierto ? 'active' : ''
 
-          <div className="row g-2 align-items-end mb-3">
-            <div className="col-6">
-              <label className="form-label small mb-1">Peso (kg)</label>
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                className="form-control form-control-lg"
-                value={peso}
-                onChange={(e) => setPeso(e.target.value)}
-                placeholder="0"
-                autoFocus
-              />
-            </div>
-            <div className="col-6">
-              <label className="form-label small mb-1">Repeticiones</label>
-              <input
-                type="number"
-                min="0"
-                className="form-control form-control-lg"
-                value={reps}
-                onChange={(e) => setReps(e.target.value)}
-                placeholder="10"
-              />
-            </div>
-          </div>
-
-          <div className="d-flex gap-2 flex-wrap">
-            {Array.from({ length: ejercicioSel.series }, (_, i) => i + 1).map((n) => {
-              const hecha = (ejercicioSel.series_registradas || []).find((s) => s.numero_serie === n)
-              return (
-                <button
-                  key={n}
-                  className={`btn ${hecha ? 'btn-success' : 'btn-outline-success'}`}
-                  onClick={() => registrarSerie(n)}
-                  disabled={guardando}
-                >
-                  Serie {n}
-                  {hecha && ` · ${hecha.peso}kg`}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Descanso: se elige una vez y la app lo recuerda */}
-          <div className="descanso-ajustes mt-3 pt-3">
-            <div className="d-flex justify-content-between align-items-center gap-2 mb-2">
-              <span className="descanso-ajustes__titulo">
-                Descanso entre series
-                <span className="descanso-ajustes__valor"> · {etiquetaRapida(duracionSeg)}</span>
-              </span>
-              <button
-                type="button"
-                className="btn btn-sm btn-warning"
-                onClick={() => iniciarDescanso()}
-                disabled={estadoDescanso === 'corriendo'}
-              >
-                <i className="bi bi-hourglass-split me-1"></i>
-                {estadoDescanso === 'corriendo' ? 'En curso' : 'Empezar'}
-              </button>
-            </div>
-
-            <div className="d-flex flex-wrap gap-2 mb-2">
-              {PRESETS.map((segundos) => (
-                <button
-                  key={segundos}
-                  type="button"
-                  className={`btn btn-sm ${duracionSeg === segundos ? 'btn-dark' : 'btn-outline-secondary'}`}
-                  onClick={() => {
-                    cambiarDuracion(segundos)
-                    // Al elegir un tiempo rapido, lo que hubiera escrito en
-                    // "Otro" ya no pinta nada.
-                    setOtroDescanso('')
-                    setErrorDescanso('')
-                  }}
-                  aria-pressed={duracionSeg === segundos}
-                >
-                  {etiquetaRapida(segundos)}
-                </button>
-              ))}
-            </div>
-
-            <div className="d-flex gap-2 align-items-start">
-              <input
-                type="text"
-                inputMode="text"
-                className={`form-control form-control-sm descanso-otro ${errorDescanso ? 'is-invalid' : ''}`}
-                value={otroDescanso}
-                onChange={(e) => {
-                  const texto = e.target.value
-                  setOtroDescanso(texto)
-                  if (errorDescanso) setErrorDescanso('')
-
-                  // Se aplica ya, sin esperar a salir del campo. Asi el
-                  // boton "Empezar" y la siguiente serie usan el tiempo
-                  // nuevo aunque el cursor siga dentro del input.
-                  const segundos = parsearDescanso(texto)
-                  if (segundos) cambiarDuracion(segundos)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    aplicarOtroDescanso()
-                  }
-                }}
-                placeholder="Otro: 90 o 1:30"
-                aria-label="Otro tiempo de descanso"
-              />
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-secondary"
-                onClick={aplicarOtroDescanso}
-              >
-                Poner
-              </button>
-            </div>
-
-            {errorDescanso && <div className="small text-danger mt-1">{errorDescanso}</div>}
-
-            <div className="form-check form-switch mt-2 mb-0">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                role="switch"
-                id={`auto-descanso-${sesion.id}`}
-                checked={autoDescanso}
-                onChange={(e) => cambiarAuto(e.target.checked)}
-              />
-              <label className="form-check-label small ms-2" htmlFor={`auto-descanso-${sesion.id}`}>
-                Empezar solo al marcar una serie
-              </label>
-            </div>
-
-            {estadoDescanso !== 'inactivo' && (
-              <div className="small text-muted mt-2">
-                El próximo descanso usará {etiquetaRapida(duracionSeg)}.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Lista de ejercicios con estado por color */}
-      <div className="d-flex flex-column gap-2 mb-3">
-        {sesion.ejercicios.map((ej) => {
-          const regs = ej.series_registradas || []
           return (
-            <div
-              key={ej.id}
-              className="d-flex justify-content-between align-items-center p-3 rounded border"
-              style={{
-                borderLeft: `5px solid ${COLOR_ESTADO[ej.estado]}`,
-                background: ejercicioSel?.id === ej.id ? 'var(--papel-hondo)' : 'white',
-                cursor: 'pointer',
-              }}
-              onClick={() => setEjercicioSel(ej)}
-            >
-              <div className="flex-grow-1">
-                <div className="fw-semibold">
-                  {ej.nombre}
-                  {ej.es_extra === 1 && (
-                    <span className="badge bg-warning text-dark ms-2" style={{ fontSize: '0.65rem' }}>EXTRA</span>
-                  )}
-                </div>
-                <small className="text-muted">
-                  {ej.series} series{ej.reps ? ` x ${ej.reps} reps` : ''} · {ej.musculo}
-                </small>
-                {regs.length > 0 && (
-                  <div className="mt-1">
-                    {regs.map((s) => (
-                      <span
-                        key={s.numero_serie}
-                        className="badge bg-light text-dark border me-1"
-                        style={{ fontSize: '0.7rem' }}
-                        title="Click para borrar esta serie"
-                        onClick={(e) => { e.stopPropagation(); borrarSerie(ej.id, s.numero_serie) }}
-                      >
-                        S{s.numero_serie}: {s.peso}kg{s.reps ? ` x${s.reps}` : ''} <i className="bi bi-x"></i>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="text-end ms-2">
-                <span
-                  className="badge"
-                  style={{ background: COLOR_ESTADO[ej.estado], color: 'white' }}
-                >
-                  {ETIQUETA_ESTADO[ej.estado]}
+            <article className={`exercise ${abierto ? 'is-open' : ''}`} key={ej.id}>
+              <button
+                className="exercise-head"
+                type="button"
+                onClick={() => setEjercicioAbierto(abierto ? null : ej.id)}
+                aria-expanded={abierto}
+                aria-controls={`exercise-body-${ej.id}`}
+              >
+                <span className="exercise-num">{String(indice + 1).padStart(2, '0')}</span>
+                <span className="exercise-info">
+                  <strong>
+                    {ej.nombre}
+                    {ej.es_extra === 1 && <span className="mini-tag">EXTRA</span>}
+                  </strong>
+                  <small>{ej.series} series{ej.reps ? ` · ${ej.reps} reps` : ''} · {ej.musculo}</small>
                 </span>
-                <div className="small text-muted mt-1">
-                  {regs.length}/{ej.series}
+                <span className={`exercise-status ${estado}`}>
+                  {completo ? 'Completado' : `${hechas}/${ej.series}`}
+                </span>
+                <Icon nombre="chevron-down" />
+              </button>
+
+              <div className="exercise-body" id={`exercise-body-${ej.id}`} inert={abierto ? undefined : ''}>
+                <div className="exercise-body-inner">
+                  <div className="set-table">
+                    {Array.from({ length: ej.series }, (_, i) => i + 1).map((n) => {
+                      const registrada = registradas.find((s) => s.numero_serie === n)
+                      const clave = `${ej.id}-${n}`
+                      const ocupada = guardandoSerie === clave
+                      return (
+                        <div className={`set-row ${registrada ? 'is-done' : ''}`} key={n}>
+                          <span className="set-index">{String(n).padStart(2, '0')}</span>
+                          <div className="set-field">
+                            <label htmlFor={`kg-${ej.id}-${n}`}>KG</label>
+                            <input
+                              id={`kg-${ej.id}-${n}`}
+                              type="number"
+                              inputMode="decimal"
+                              min="0"
+                              step="0.5"
+                              value={valorBorrador(ej, n, 'peso')}
+                              onChange={(e) => cambiarBorrador(ej, n, 'peso', e.target.value)}
+                              disabled={Boolean(registrada)}
+                              aria-label={`Peso, ${ej.nombre}, serie ${n}`}
+                            />
+                          </div>
+                          <div className="set-field">
+                            <label htmlFor={`reps-${ej.id}-${n}`}>REPS</label>
+                            <input
+                              id={`reps-${ej.id}-${n}`}
+                              type="number"
+                              inputMode="numeric"
+                              min="0"
+                              step="1"
+                              value={valorBorrador(ej, n, 'reps')}
+                              onChange={(e) => cambiarBorrador(ej, n, 'reps', e.target.value)}
+                              disabled={Boolean(registrada)}
+                              aria-label={`Repeticiones, ${ej.nombre}, serie ${n}`}
+                            />
+                          </div>
+                          <button
+                            className="set-check"
+                            type="button"
+                            onClick={() => alternarSerie(ej, n, Boolean(registrada))}
+                            disabled={ocupada}
+                            aria-pressed={Boolean(registrada)}
+                            aria-label={registrada ? `Borrar serie ${n} de ${ej.nombre}` : `Completar serie ${n} de ${ej.nombre}`}
+                            title={registrada ? 'Pulsa para borrar esta serie' : 'Marcar serie como hecha'}
+                          >
+                            {ocupada ? <span className="mini-spinner" /> : <Icon nombre={registrada ? 'x' : 'check'} />}
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  <div className="exercise-actions">
+                    <span className="exercise-note">
+                      {completo ? 'Todas las series apuntadas.' : 'Apunta peso y repeticiones al terminar cada serie.'}
+                    </span>
+                  </div>
+
+                  <div className="descanso-ajustes">
+                    <div className="rest-settings-head">
+                      <span className="descanso-ajustes__titulo">
+                        Descanso entre series
+                        <span className="descanso-ajustes__valor"> · {etiquetaRapida(duracionSeg)}</span>
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-warning"
+                        onClick={() => iniciarDescanso()}
+                        disabled={estadoDescanso === 'corriendo'}
+                      >
+                        <Icon nombre="pause" />
+                        {estadoDescanso === 'corriendo' ? 'En curso' : 'Empezar'}
+                      </button>
+                    </div>
+
+                    <div className="preset-row">
+                      {PRESETS.map((segundos) => (
+                        <button
+                          key={segundos}
+                          type="button"
+                          className={`btn btn-sm ${duracionSeg === segundos ? 'btn-ink' : 'btn-ghost'}`}
+                          onClick={() => {
+                            cambiarDuracion(segundos)
+                            setOtroDescanso('')
+                            setErrorDescanso('')
+                          }}
+                          aria-pressed={duracionSeg === segundos}
+                        >
+                          {etiquetaRapida(segundos)}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="rest-custom">
+                      <input
+                        type="text"
+                        inputMode="text"
+                        className={`form-control form-control-sm descanso-otro ${errorDescanso ? 'is-invalid' : ''}`}
+                        value={otroDescanso}
+                        onChange={(e) => {
+                          const texto = e.target.value
+                          setOtroDescanso(texto)
+                          if (errorDescanso) setErrorDescanso('')
+                          const segundosNuevos = parsearDescanso(texto)
+                          if (segundosNuevos) cambiarDuracion(segundosNuevos)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            aplicarOtroDescanso()
+                          }
+                        }}
+                        placeholder="Otro: 90 o 1:30"
+                        aria-label="Otro tiempo de descanso"
+                      />
+                      <button type="button" className="btn btn-sm btn-ghost" onClick={aplicarOtroDescanso}>
+                        Poner
+                      </button>
+                    </div>
+
+                    {errorDescanso && <div className="field-error">{errorDescanso}</div>}
+
+                    <label className="auto-rest">
+                      <span className="switch">
+                        <input
+                          type="checkbox"
+                          checked={autoDescanso}
+                          onChange={(e) => cambiarAuto(e.target.checked)}
+                          aria-label="Empezar el descanso al marcar una serie"
+                        />
+                        <span />
+                      </span>
+                      <span>Empezar solo al marcar una serie</span>
+                    </label>
+                  </div>
                 </div>
               </div>
-            </div>
+            </article>
           )
         })}
       </div>
 
-      <button className="btn btn-primary w-100 btn-lg" onClick={finalizar}>
-        <i className="bi bi-flag-fill me-2"></i>
-        Finalizar rutina ({formatearCronometro(segundos)})
-      </button>
+      <div className="train-actions">
+        <button className="btn btn-primary btn-lg" type="button" onClick={finalizar}>
+          <Icon nombre="check" /> Finalizar rutina ({formatearCronometro(segundos)})
+        </button>
+        <span className="exercise-note">La sesión y el descanso siguen activos aunque cambies de pantalla.</span>
+      </div>
 
       {/* Barra fija del descanso. Va en el body para que ningun contenedor
           con transformaciones o scroll la pueda recortar. */}
@@ -479,9 +435,7 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
         createPortal(
           <div
             className={`descanso-barra descanso-barra--${estadoDescanso}${
-              estadoDescanso === 'corriendo' && restanteMs <= 10000
-                ? ' descanso-barra--urgente'
-                : ''
+              estadoDescanso === 'corriendo' && restanteMs <= 10000 ? ' descanso-barra--urgente' : ''
             }`}
           >
             <div className="descanso-barra__fila">
@@ -502,43 +456,26 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
 
               <div className="descanso-barra__acciones">
                 {(estadoDescanso === 'corriendo' || estadoDescanso === 'pausado') && (
-                  <button
-                    type="button"
-                    className="descanso-barra__btn"
-                    onClick={() => sumarDescanso(30)}
-                  >
+                  <button type="button" className="descanso-barra__btn" onClick={() => sumarDescanso(30)}>
                     +30 s
                   </button>
                 )}
 
                 {estadoDescanso === 'corriendo' && (
-                  <button
-                    type="button"
-                    className="descanso-barra__btn"
-                    onClick={pausarDescanso}
-                    aria-label="Pausar el descanso"
-                  >
-                    <i className="bi bi-pause-fill"></i>
-                    <span className="d-none d-sm-inline ms-1">Pausa</span>
+                  <button type="button" className="descanso-barra__btn" onClick={pausarDescanso} aria-label="Pausar el descanso">
+                    <Icon nombre="pause" />
+                    <span className="d-none d-sm-inline">Pausa</span>
                   </button>
                 )}
 
                 {estadoDescanso === 'pausado' && (
-                  <button
-                    type="button"
-                    className="descanso-barra__btn"
-                    onClick={reanudarDescanso}
-                  >
-                    <i className="bi bi-play-fill"></i>
-                    <span className="ms-1">Seguir</span>
+                  <button type="button" className="descanso-barra__btn" onClick={reanudarDescanso}>
+                    <Icon nombre="play" />
+                    <span>Seguir</span>
                   </button>
                 )}
 
-                <button
-                  type="button"
-                  className="descanso-barra__btn descanso-barra__btn--cerrar"
-                  onClick={detenerDescanso}
-                >
+                <button type="button" className="descanso-barra__btn descanso-barra__btn--cerrar" onClick={detenerDescanso}>
                   {estadoDescanso === 'terminado' ? 'Hecho' : 'Saltar'}
                 </button>
               </div>
@@ -547,13 +484,9 @@ export default function SesionActiva({ sesion, onFinalizada, onSesionCambiada })
             <div className="descanso-barra__progreso" aria-hidden="true">
               <div
                 style={{
-                  width: `${
-                    estadoDescanso === 'terminado'
-                      ? 0
-                      : porcentajeRestante(restanteMs, totalMs)
-                  }%`,
+                  width: `${estadoDescanso === 'terminado' ? 0 : porcentajeRestante(restanteMs, totalMs)}%`,
                 }}
-              ></div>
+              />
             </div>
           </div>,
           document.body

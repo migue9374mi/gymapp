@@ -433,6 +433,23 @@ async function anadirColumnasSiFaltan() {
   }
 }
 
+function anadirColumnasLocalesSiFaltan() {
+  const columnas = [
+    ['users', 'fondo', 'TEXT'],
+    ['users', 'fondo_opacidad', 'REAL DEFAULT 0.35'],
+  ];
+
+  for (const [tabla, columna, definicion] of columnas) {
+    try {
+      dbLocal.run(`ALTER TABLE ${tabla} ADD COLUMN ${columna} ${definicion}`);
+      console.log(`  Anadida la columna ${tabla}.${columna}`);
+    } catch (e) {
+      if (/duplicate column|ya existe/i.test(e.message)) continue;
+      throw e;
+    }
+  }
+}
+
 async function initDatabase() {
   if (ES_NUBE) {
     // Creamos el esquema en la nube (si ya existe, IF NOT EXISTS lo ignora)
@@ -473,6 +490,7 @@ async function initDatabase() {
 
   dbLocal.run('PRAGMA foreign_keys = ON');
   dbLocal.run(ESQUEMA);
+  anadirColumnasLocalesSiFaltan();
   guardarEnDisco();
   console.log('Base de datos local inicializada (database.db)');
 }

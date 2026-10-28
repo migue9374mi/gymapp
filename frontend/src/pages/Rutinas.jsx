@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
+import Icon from '../components/Icon'
+import { PageHead, Avisos, Cargando } from '../components/ui'
 
 const CATEGORIAS = [
   { valor: 'general', label: 'General' },
@@ -25,6 +27,18 @@ const COLOR_CATEGORIA = {
   core: 'info',
   cardio: 'dark',
   general: 'secondary',
+}
+
+function etiquetaCategoria(valor) {
+  return CATEGORIAS.find((c) => c.valor === valor)?.label || valor
+}
+
+function tono(categoria) {
+  if (categoria === 'push' || categoria === 'cardio') return 'tag-red'
+  if (categoria === 'pull') return 'tag-lime'
+  if (categoria === 'pierna') return 'tag-blue'
+  if (categoria === 'full_body' || categoria === 'core') return 'tag-yellow'
+  return 'tag-ink'
 }
 
 export default function Rutinas() {
@@ -100,137 +114,153 @@ export default function Rutinas() {
   }
 
   return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <div>
-          <h1 className="fw-bold mb-0" style={{ color: 'var(--tinta)' }}>Mis Rutinas</h1>
-          <p className="text-muted mb-0">Crea y gestiona tus rutinas de entrenamiento</p>
-        </div>
-        <button className="btn btn-primary" onClick={() => setMostrarForm(!mostrarForm)}>
-          <i className={`bi ${mostrarForm ? 'bi-x-lg' : 'bi-plus-lg'} me-2`}></i>
-          {mostrarForm ? 'Cancelar' : 'Nueva Rutina'}
+    <>
+      <PageHead
+        eyebrow="Tu biblioteca"
+        titulo="Mis rutinas"
+        sub="Crea, ajusta y comparte las rutinas con las que entrenas."
+      >
+        <button
+          type="button"
+          className={`btn ${mostrarForm ? 'btn-ghost' : 'btn-primary'}`}
+          onClick={() => setMostrarForm((v) => !v)}
+        >
+          <Icon nombre={mostrarForm ? 'x' : 'plus'} />
+          {mostrarForm ? 'Cancelar' : 'Nueva rutina'}
         </button>
-      </div>
+      </PageHead>
 
-      {error && <div className="alert alert-danger"><i className="bi bi-exclamation-triangle me-2"></i>{error}</div>}
-      {exito && <div className="alert alert-success"><i className="bi bi-check-circle me-2"></i>{exito}</div>}
+      <Avisos error={error} exito={exito} />
 
       {mostrarForm && (
-        <div className="dashboard-card mb-4">
-          <h5 className="fw-bold mb-3">Nueva Rutina</h5>
-          <form onSubmit={handleSubmit}>
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label">Nombre</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Ej: Push Day A"
-                  required
-                />
+        <section className="panel routine-form-panel">
+          <div className="panel-head">
+            <h3>Nueva rutina</h3>
+            <span className="tag tag-lime">Borrador</span>
+          </div>
+
+          <div className="routine-form-body">
+            <form onSubmit={handleSubmit}>
+              <div className="form-grid">
+                <div className="field">
+                  <label htmlFor="rutina-nombre">Nombre</label>
+                  <input
+                    id="rutina-nombre"
+                    type="text"
+                    className="form-control"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Ej: Push Day A"
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="rutina-categoria">Categoría</label>
+                  <select
+                    id="rutina-categoria"
+                    className="form-select"
+                    value={categoria}
+                    onChange={(e) => setCategoria(e.target.value)}
+                  >
+                    {CATEGORIAS.map((c) => (
+                      <option key={c.valor} value={c.valor}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field field--full">
+                  <label htmlFor="rutina-descripcion">
+                    Descripción <span className="optional">(opcional)</span>
+                  </label>
+                  <textarea
+                    id="rutina-descripcion"
+                    className="form-control"
+                    rows="2"
+                    value={descripcion}
+                    onChange={(e) => setDescripcion(e.target.value)}
+                    placeholder="Objetivo de la rutina, notas, material…"
+                  />
+                </div>
               </div>
-              <div className="col-md-6">
-                <label className="form-label">Categoría</label>
-                <select
-                  className="form-select"
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                >
-                  {CATEGORIAS.map((c) => (
-                    <option key={c.valor} value={c.valor}>{c.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-12">
-                <label className="form-label">Descripción</label>
-                <textarea
-                  className="form-control"
-                  rows="2"
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  placeholder="Objetivo de la rutina, notes..."
-                />
-              </div>
-              <div className="col-12">
+
+              <div className="form-actions">
                 <button type="submit" className="btn btn-primary" disabled={guardando}>
                   {guardando ? (
-                    <><span className="spinner-border spinner-border-sm me-2"></span>Guardando...</>
+                    <><span className="mini-spinner" /> Guardando…</>
                   ) : (
-                    <><i className="bi bi-check-lg me-2"></i>Crear Rutina</>
+                    <><Icon nombre="check" /> Crear rutina</>
                   )}
                 </button>
+                <span className="helper-copy">Después podrás añadirle ejercicios.</span>
               </div>
-            </div>
-          </form>
-        </div>
+            </form>
+          </div>
+        </section>
       )}
 
       {cargando ? (
-        <div className="text-center py-5">
-          <div className="spinner-border text-danger" role="status"></div>
-        </div>
+        <Cargando texto="Leyendo tus rutinas…" />
       ) : rutinas.length === 0 ? (
-        <div className="dashboard-card text-center py-5">
-          <p className="fs-1 mb-2">🏋️</p>
-          <h5 className="fw-bold">Todavía no tienes rutinas</h5>
-          <p className="text-muted mb-4">Crea tu primera rutina para empezar a entrenar</p>
-          <button className="btn btn-primary" onClick={() => setMostrarForm(true)}>
-            <i className="bi bi-plus-lg me-2"></i>Crear mi primera rutina
+        <div className="empty-state">
+          <span className="empty-icon"><Icon nombre="dumbbell" /></span>
+          <h3>Todavía no tienes rutinas</h3>
+          <p>Crea tu primera rutina para empezar a entrenar y a llenar tu historial.</p>
+          <button className="btn btn-primary" type="button" onClick={() => setMostrarForm(true)}>
+            <Icon nombre="plus" /> Crear mi primera rutina
           </button>
         </div>
       ) : (
-        <div className="row g-4">
+        <div className="routine-grid">
           {rutinas.map((rutina) => (
-            <div className="col-md-6 col-lg-4" key={rutina.id}>
-              <div className="card h-100">
-                <div className="card-body d-flex flex-column">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <span className={`badge bg-${COLOR_CATEGORIA[rutina.categoria] || 'secondary'}`}>
-                      {CATEGORIAS.find((c) => c.valor === rutina.categoria)?.label || rutina.categoria}
-                    </span>
-                    {rutina.es_publica === 1 && (
-                      <span className="badge bg-success"><i className="bi bi-people-fill me-1"></i>Pública</span>
-                    )}
-                  </div>
-
-                  <h5 className="fw-bold mb-2">{rutina.nombre}</h5>
-                  <p className="text-muted small flex-grow-1">
-                    {rutina.descripcion || 'Sin descripción'}
-                  </p>
-
-                  <div className="d-flex gap-3 text-muted small mb-3">
-                    <span><i className="bi bi-list-check me-1"></i>{rutina.num_ejercicios} ejercicios</span>
-                    <span><i className="bi bi-calendar-check me-1"></i>{rutina.veces_entrenada} veces</span>
-                  </div>
-
-                  <div className="d-flex gap-2">
-                    <Link to={`/rutinas/${rutina.id}`} className="btn btn-primary btn-sm flex-grow-1">
-                      <i className="bi bi-pencil me-1"></i>Gestionar
-                    </Link>
-                    <button
-                      className="btn btn-outline-secondary btn-sm"
-                      onClick={() => handlePublicar(rutina)}
-                      title={rutina.es_publica ? 'Hacer privada' : 'Compartir con la comunidad'}
-                    >
-                      <i className={`bi ${rutina.es_publica ? 'bi-eye-slash' : 'bi-share'}`}></i>
-                    </button>
-                    <button
-                      className="btn btn-outline-danger btn-sm"
-                      onClick={() => handleEliminar(rutina)}
-                      title="Eliminar"
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </div>
+            <article className="routine-card" key={rutina.id}>
+              <div className="routine-card-head">
+                <span className={`tag ${tono(rutina.categoria)}`}>
+                  {etiquetaCategoria(rutina.categoria)}
+                </span>
+                {rutina.es_publica === 1 && (
+                  <span className="tag tag-green"><Icon nombre="users" /> Pública</span>
+                )}
               </div>
-            </div>
+
+              <h2 className="routine-card-title">
+                <Link to={`/rutinas/${rutina.id}`}>{rutina.nombre}</Link>
+              </h2>
+              <p>{rutina.descripcion || 'Sin descripción todavía.'}</p>
+
+              <div className="routine-meta">
+                <span><Icon nombre="list" />{rutina.num_ejercicios} ejercicios</span>
+                <span><Icon nombre="calendar" />{rutina.veces_entrenada} veces</span>
+              </div>
+
+              <div className="routine-card-actions">
+                <Link to={`/rutinas/${rutina.id}`} className="btn btn-primary btn-sm">
+                  <Icon nombre="edit" /> Gestionar
+                </Link>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => handlePublicar(rutina)}
+                  title={rutina.es_publica ? 'Hacer privada' : 'Compartir con la comunidad'}
+                  aria-label={rutina.es_publica ? 'Hacer privada' : 'Compartir con la comunidad'}
+                >
+                  <Icon nombre={rutina.es_publica ? 'eye' : 'users'} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--danger"
+                  onClick={() => handleEliminar(rutina)}
+                  title="Eliminar"
+                  aria-label={`Eliminar ${rutina.nombre}`}
+                >
+                  <Icon nombre="trash" />
+                </button>
+              </div>
+            </article>
           ))}
         </div>
       )}
-    </div>
+    </>
   )
 }
 

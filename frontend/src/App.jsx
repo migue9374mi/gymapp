@@ -1,6 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import Navbar from './components/Navbar'
+import AppShell from './components/AppShell'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -20,129 +20,68 @@ import ErrorBoundary from './components/ErrorBoundary'
 import ProgramadorAvisos from './nativa/ProgramadorAvisos'
 import FondoApp from './components/FondoApp'
 
-function PrivateRoute({ children }) {
-  const { user, loading } = useAuth()
-
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <div className="spinner-border text-danger" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
-      </div>
-    )
-  }
-
-  return user ? children : <Navigate to="/login" />
+function CargandoPantalla() {
+  return (
+    <div className="loading-screen" role="status">
+      <span className="loading-dot" />
+      <span>Cargando…</span>
+    </div>
+  )
 }
 
 function PublicRoute({ children }) {
   const { user, loading } = useAuth()
-
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <div className="spinner-border text-danger" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
-      </div>
-    )
-  }
-
+  if (loading) return <CargandoPantalla />
   return user ? <Navigate to="/dashboard" /> : children
 }
 
-function AppContent() {
-  const { user } = useAuth()
+/**
+ * Todo lo que hay dentro de la app privada comparte armazon: sidebar,
+ * cabecera y navegacion movil. El fondo del usuario se pinta debajo.
+ */
+function PrivateLayout() {
+  const { user, loading } = useAuth()
+  if (loading) return <CargandoPantalla />
+  if (!user) return <Navigate to="/login" />
 
   return (
-    <Router>
-      {user && <FondoApp />}
-      {/* app-capa va por encima del fondo; ver index.css */}
+    <>
+      <FondoApp />
       <div className="app-capa">
-        {user && <Navbar />}
         <ProgramadorAvisos />
         <ErrorBoundary key={window.location.pathname}>
-        <Routes>
-          <Route path="/login" element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } />
-          <Route path="/register" element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          } />
-          <Route path="/olvide-contrasena" element={
-            <PublicRoute>
-              <OlvideContrasena />
-            </PublicRoute>
-          } />
-          <Route path="/recuperar/:token" element={
-            <PublicRoute>
-              <RecuperarContrasena />
-            </PublicRoute>
-          } />
-          <Route path="/dashboard" element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          } />
-          <Route path="/rutinas" element={
-            <PrivateRoute>
-              <Rutinas />
-            </PrivateRoute>
-          } />
-          <Route path="/rutinas/:id" element={
-            <PrivateRoute>
-              <RutinaDetalle />
-            </PrivateRoute>
-          } />
-          <Route path="/plan" element={
-            <PrivateRoute>
-              <Plan />
-            </PrivateRoute>
-          } />
-          <Route path="/entrenar" element={
-            <PrivateRoute>
-              <Entrenar />
-            </PrivateRoute>
-          } />
-          <Route path="/progreso" element={
-            <PrivateRoute>
-              <Progreso />
-            </PrivateRoute>
-          } />
-          <Route path="/medidas" element={
-            <PrivateRoute>
-              <Medidas />
-            </PrivateRoute>
-          } />
-          <Route path="/perfil" element={
-            <PrivateRoute>
-              <Perfil />
-            </PrivateRoute>
-          } />
-          <Route path="/comunidad" element={
-            <PrivateRoute>
-              <Comunidad />
-            </PrivateRoute>
-          } />
-          <Route path="/comunidad/:id" element={
-            <PrivateRoute>
-              <ComunidadDetalle />
-            </PrivateRoute>
-          } />
-          <Route path="/fotos" element={
-            <PrivateRoute>
-              <Fotos />
-            </PrivateRoute>
-          } />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-      </ErrorBoundary>
+          <AppShell />
+        </ErrorBoundary>
       </div>
+    </>
+  )
+}
+
+function AppContent() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/olvide-contrasena" element={<PublicRoute><OlvideContrasena /></PublicRoute>} />
+        <Route path="/recuperar/:token" element={<PublicRoute><RecuperarContrasena /></PublicRoute>} />
+
+        <Route element={<PrivateLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/rutinas" element={<Rutinas />} />
+          <Route path="/rutinas/:id" element={<RutinaDetalle />} />
+          <Route path="/plan" element={<Plan />} />
+          <Route path="/entrenar" element={<Entrenar />} />
+          <Route path="/progreso" element={<Progreso />} />
+          <Route path="/medidas" element={<Medidas />} />
+          <Route path="/perfil" element={<Perfil />} />
+          <Route path="/comunidad" element={<Comunidad />} />
+          <Route path="/comunidad/:id" element={<ComunidadDetalle />} />
+          <Route path="/fotos" element={<Fotos />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/login" />} />
+      </Routes>
     </Router>
   )
 }

@@ -1,37 +1,46 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
 import AjustesAvisos from '../nativa/AjustesAvisos'
+import Icon from '../components/Icon'
+import { PageHead, Avisos } from '../components/ui'
 
-const DIAS = [
-  { num: 0, nombre: 'Lunes', icono: 'bi-1-circle' },
-  { num: 1, nombre: 'Martes', icono: 'bi-2-circle' },
-  { num: 2, nombre: 'Miercoles', icono: 'bi-3-circle' },
-  { num: 3, nombre: 'Jueves', icono: 'bi-4-circle' },
-  { num: 4, nombre: 'Viernes', icono: 'bi-5-circle' },
-  { num: 5, nombre: 'Sabado', icono: 'bi-6-circle' },
-  { num: 6, nombre: 'Domingo', icono: 'bi-7-circle' },
-]
+const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
-const COLOR_CATEGORIA = {
-  push: 'danger',
-  pull: 'primary',
-  pierna: 'success',
-  full_body: 'warning',
-  core: 'info',
-  cardio: 'dark',
-  general: 'secondary',
+const TONO = {
+  push: 'push',
+  pull: 'pull',
+  pierna: 'legs',
+  full_body: 'full',
+  core: 'core',
+  cardio: 'cardio',
+  general: 'general',
+}
+
+function Etiqueta({ categoria }) {
+  const clase = categoria === 'push' || categoria === 'cardio'
+    ? 'tag-red'
+    : categoria === 'pull'
+      ? 'tag-lime'
+      : categoria === 'pierna'
+        ? 'tag-blue'
+        : categoria === 'full_body' || categoria === 'core'
+          ? 'tag-yellow'
+          : 'tag'
+  return <span className={`tag ${clase}`}>{categoria}</span>
 }
 
 export default function Plan() {
+  const hoy = (new Date().getDay() + 6) % 7
   const [plan, setPlan] = useState([])
   const [rutinas, setRutinas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
   const [exito, setExito] = useState('')
 
-  // Para asignar: dia seleccionado + rutina seleccionada
-  const [diaSeleccionado, setDiaSeleccionado] = useState(null)
+  const [diaSeleccionado, setDiaSeleccionado] = useState(hoy)
+  const [diaDestino, setDiaDestino] = useState(null)
   const [rutinaSeleccionada, setRutinaSeleccionada] = useState('')
 
   useEffect(() => {
@@ -40,17 +49,19 @@ export default function Plan() {
 
   const cargarTodo = async () => {
     try {
-      const [p, r] = await Promise.all([
-        api.get('/plan'),
-        api.get('/rutinas'),
-      ])
-      setPlan(p.data.plan)
-      setRutinas(r.data.rutinas)
+      const [p, r] = await Promise.all([api.get('/plan'), api.get('/rutinas')])
+      setPlan(p.data.plan || [])
+      setRutinas(r.data.rutinas || [])
     } catch (err) {
       setError(mensajeDeError(err, 'Error al cargar el plan'))
     } finally {
       setCargando(false)
     }
+  }
+
+  const confirmar = (mensaje) => {
+    setExito(mensaje)
+    setTimeout(() => setExito(''), 3500)
   }
 
   const handleAsignar = async (dia) => {
@@ -60,19 +71,18 @@ export default function Plan() {
         dia_semana: dia,
         rutina_id: parseInt(rutinaSeleccionada),
       })
-      setExito(res.data.message)
-      setTimeout(() => setExito(''), 3000)
-      setDiaSeleccionado(null)
+      confirmar(res.data.message || 'Rutina asignada')
+      setDiaDestino(null)
       setRutinaSeleccionada('')
       cargarTodo()
     } catch (err) {
       setError(mensajeDeError(err, 'Error al asignar rutina'))
-      setTimeout(() => setError(''), 3000)
+      setTimeout(() => setError(''), 3500)
     }
   }
 
   const handleQuitar = async (planId, nombre) => {
-    if (!window.confirm(`¿Quitar "${nombre}" de este dia?`)) return
+    if (!window.confirm(`¿Quitar "${nombre}" de este día?`)) return
     try {
       await api.delete(`/plan/${planId}`)
       cargarTodo()
@@ -81,165 +91,218 @@ export default function Plan() {
     }
   }
 
+  const prepararMovimiento = (rutinaId) => {
+    setRutinaSeleccionada(String(rutinaId))
+    setDiaDestino(diaSeleccionado)
+  }
+
   if (cargando) {
     return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-danger" role="status"></div>
-      </div>
+      <>
+        <PageHead eyebrow="Tu semana" titulo={<>Tu plan<br />semanal</>} />
+        <div className="loading-panel" role="status"><span className="loading-dot" /><span>Leyendo tu plan…</span></div>
+      </>
     )
   }
 
+  const dia = plan[diaSeleccionado] || { nombre: DIAS[diaSeleccionado], rutinas: [] }
   const diasConRutina = plan.filter((d) => d.rutinas.length > 0).length
+  const totalRutinas = plan.reduce((s, d) => s + d.rutinas.length, 0)
+  const fecha = new Date()
+  fecha.setDate(fecha.getDate() + (diaSeleccionado - hoy))
 
   return (
-    <div className="container py-4">
-      <div className="mb-4">
-        <h1 className="fw-bold" style={{ color: 'var(--tinta)' }}>Mi Plan Semanal</h1>
-        <p className="text-muted">
-          Asigna tus rutinas a los dias de la semana. Completa toda la semana para sumar a tu racha.
-        </p>
+    <>
+      <PageHead
+        eyebrow={`Semana actual · ${fecha.getDate()} ${MESES[fecha.getMonth()]}`}
+        titulo={<>Tu plan<br />semanal</>}
+        sub="Asigna tus rutinas a los días de la semana. Completa la semana para sumar a tu racha."
+      >
+        <Link className="btn btn-ghost" to="/rutinas">
+          <Icon nombre="edit" /> Mis rutinas
+        </Link>
+        <button className="btn btn-ink" type="button" onClick={() => setDiaDestino(hoy)}>
+          <Icon nombre="target" /> Hoy
+        </button>
+      </PageHead>
+
+      <Avisos error={error} exito={exito} />
+
+      <div className="week-grid">
+        {plan.map((d) => {
+          const primera = d.rutinas[0]
+          const tono = TONO[primera?.categoria] || 'rest'
+          const esHoy = d.dia === hoy
+          return (
+            <button
+              key={d.dia}
+              type="button"
+              className={`day-card tone-${tono} ${d.dia === diaSeleccionado ? 'is-selected' : ''} ${d.rutinas.length === 0 ? 'is-rest' : ''}`}
+              onClick={() => setDiaSeleccionado(d.dia)}
+              aria-pressed={d.dia === diaSeleccionado}
+            >
+              <span className="day-name">{d.nombre}{esHoy ? ' · hoy' : ''}</span>
+              <span className="day-num">{new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + (d.dia - diaSeleccionado)).getDate()}</span>
+              <span className="day-routine">{d.rutinas.length ? d.rutinas.map((r) => r.nombre).join(' + ') : 'Descanso'}</span>
+              <span className="day-tag">{primera?.categoria || 'REST'}</span>
+            </button>
+          )
+        })}
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
-      {exito && <div className="alert alert-success"><i className="bi bi-check-circle me-2"></i>{exito}</div>}
-
-      <AjustesAvisos plan={plan} />
-
-      {rutinas.length === 0 ? (
-        <div className="dashboard-card text-center py-5">
-          <p className="fs-1 mb-2">📋</p>
-          <h5 className="fw-bold">Primero crea tus rutinas</h5>
-          <p className="text-muted mb-4">Necesitas al menos una rutina para armar tu plan semanal</p>
-          <Link to="/rutinas" className="btn btn-primary">Ir a mis rutinas</Link>
-        </div>
-      ) : (
-        <>
-          <div className="dashboard-card mb-4">
-            <div className="row align-items-end g-3">
-              <div className="col-md-4">
-                <label className="form-label fw-semibold">1. Elige la rutina</label>
-                <select
-                  className="form-select"
-                  value={rutinaSeleccionada}
-                  onChange={(e) => setRutinaSeleccionada(e.target.value)}
-                >
-                  <option value="">Selecciona una rutina...</option>
-                  {rutinas.map((r) => (
-                    <option key={r.id} value={r.id}>{r.nombre}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">2. Elige el dia</label>
-                <div className="d-flex gap-2 flex-wrap">
-                  {DIAS.map((d) => (
-                    <button
-                      key={d.num}
-                      className={`btn btn-sm ${diaSeleccionado === d.num ? 'btn-danger' : 'btn-outline-secondary'}`}
-                      onClick={() => setDiaSeleccionado(d.num)}
-                      disabled={!rutinaSeleccionada}
-                    >
-                      {d.nombre.slice(0, 3)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="col-md-2">
-                {diaSeleccionado !== null && rutinaSeleccionada ? (
-                  <button className="btn btn-success w-100" onClick={() => handleAsignar(diaSeleccionado)}>
-                    <i className="bi bi-plus-lg me-1"></i>Asignar
-                  </button>
+      <div className="plan-layout">
+        <section className="panel">
+          <div className="plan-detail">
+            <div className="plan-detail-head">
+              <div>
+                <span className="eyebrow">
+                  {DIAS[diaSeleccionado]} · {fecha.getDate()} {MESES[fecha.getMonth()]}
+                  {diaSeleccionado === hoy ? ' · Hoy' : ''}
+                </span>
+                <h2>{dia.rutinas.length === 1 ? dia.rutinas[0].nombre : dia.rutinas.length ? 'Sesión doble' : <>Día de<br />descanso</>}</h2>
+                {dia.rutinas.length > 0 ? (
+                  <span className="tag tag-ink">{dia.rutinas.length} {dia.rutinas.length === 1 ? 'rutina' : 'rutinas'}</span>
                 ) : (
-                  <div className="text-muted small text-center py-2">
-                    {diaSeleccionado !== null ? 'Confirma con Asignar' : 'Empieza eligiendo dia'}
-                  </div>
+                  <span className="tag tag-ink">REST</span>
                 )}
+                <p className="sub">
+                  {dia.rutinas.length
+                    ? 'Elige una rutina para ver sus ejercicios o empieza directamente la sesión.'
+                    : 'Recuperar también entrena. Camina, estira y duerme bien.'}
+                </p>
               </div>
+              <Icon nombre={dia.rutinas.length ? 'dumbbell' : 'heart'} />
             </div>
-          </div>
 
-          <div className="row g-3 mb-4">
-            <div className="col-md-4">
-              <div className="stat-card primary">
-                <h3>{diasConRutina}</h3>
-                <p>Dias con rutina / 7</p>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="stat-card info">
-                <h3>{7 - diasConRutina}</h3>
-                <p>Dias de descanso</p>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="stat-card success">
-                <h3>{plan.reduce((s, d) => s + d.rutinas.length, 0)}</h3>
-                <p>Rutinas por semana</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="row g-3">
-            {plan.map((dia) => (
-              <div className="col-lg-4 col-md-6" key={dia.dia}>
-                <div className={`card h-100 ${dia.rutinas.length === 0 ? 'bg-light' : ''}`}>
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">
-                        <i className={`bi ${DIAS[dia.dia].icono} me-2 text-danger`}></i>
-                        {dia.nombre}
-                      </h5>
-                      {dia.rutinas.length === 0 && (
-                        <span className="badge bg-secondary">Descanso</span>
-                      )}
+            {dia.rutinas.length > 0 ? (
+              <div className="plan-routine-list">
+                {dia.rutinas.map((r) => (
+                  <div className="plan-routine" key={r.plan_id}>
+                    <div className="plan-routine-copy">
+                      <strong>{r.nombre}</strong>
+                      <span>{r.descripcion || 'Sin descripción'}</span>
+                      <Etiqueta categoria={r.categoria} />
                     </div>
+                    <div className="plan-routine-actions">
+                      <Link className="btn btn-sm btn-ghost" to={`/rutinas/${r.rutina_id}`} title="Ver rutina">
+                        <Icon nombre="search" /> Ver
+                      </Link>
+                      <button
+                        className="icon-btn icon-btn--danger"
+                        type="button"
+                        onClick={() => handleQuitar(r.plan_id, r.nombre)}
+                        title="Quitar del día"
+                        aria-label={`Quitar ${r.nombre} del ${dia.nombre}`}
+                      >
+                        <Icon nombre="trash" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rest-note">
+                <Icon nombre="heart" />
+                <p>Un día libre no es un día perdido. El músculo crece cuando descansa.</p>
+              </div>
+            )}
 
-                    {dia.rutinas.length === 0 ? (
-                      <div className="text-center py-3">
-                        <p className="fs-3 mb-1">😴</p>
-                        <small className="text-muted">Dia de descanso</small>
-                      </div>
-                    ) : (
-                      <div className="d-flex flex-column gap-2">
-                        {dia.rutinas.map((r) => (
-                          <div
-                            key={r.plan_id}
-                            className="d-flex justify-content-between align-items-center p-2 rounded"
-                            style={{ background: 'var(--papel-hondo)' }}
-                          >
-                            <div className="flex-grow-1">
-                              <div className="fw-semibold small">{r.nombre}</div>
-                              <span className={`badge bg-${COLOR_CATEGORIA[r.categoria] || 'secondary'} mt-1`}>
-                                {r.categoria}
-                              </span>
-                            </div>
-                            <div className="d-flex gap-1">
-                              <Link
-                                to={`/rutinas/${r.rutina_id}`}
-                                className="btn btn-sm btn-outline-primary"
-                                title="Ver rutina"
-                              >
-                                <i className="bi bi-eye"></i>
-                              </Link>
-                              <button
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => handleQuitar(r.plan_id, r.nombre)}
-                                title="Quitar del dia"
-                              >
-                                <i className="bi bi-x-lg"></i>
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+            <div className="plan-actions">
+              <Link className={`btn btn-primary ${dia.rutinas.length === 0 ? 'is-disabled' : ''}`} to="/entrenar">
+                {dia.rutinas.length ? 'Ir a entrenar' : 'Entrenar igualmente'} <Icon nombre="arrow-right" />
+              </Link>
+              <button className="btn btn-ghost" type="button" onClick={() => setDiaDestino(diaSeleccionado)}>
+                <Icon nombre="plus" /> Asignar rutina
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <div className="plan-side">
+          <section className="panel">
+            <div className="panel-head">
+              <h3>Asignar rutina</h3>
+              <span className="tag tag-ink">Plan</span>
+            </div>
+            {rutinas.length === 0 ? (
+              <div className="plan-form">
+                <p className="helper-copy">Primero necesitas crear una rutina.</p>
+                <Link className="btn btn-primary btn-block" to="/rutinas">Ir a mis rutinas</Link>
+              </div>
+            ) : (
+              <form
+                className="plan-form"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (diaDestino != null) handleAsignar(diaDestino)
+                }}
+              >
+                <div className="field">
+                  <label htmlFor="plan-rutina">Rutina</label>
+                  <select
+                    id="plan-rutina"
+                    className="form-select"
+                    value={rutinaSeleccionada}
+                    onChange={(e) => setRutinaSeleccionada(e.target.value)}
+                  >
+                    <option value="">Selecciona una rutina…</option>
+                    {rutinas.map((r) => (
+                      <option key={r.id} value={r.id}>{r.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field">
+                  <span className="field-label">Día</span>
+                  <div className="day-picker">
+                    {DIAS.map((nombre, i) => (
+                      <button
+                        key={nombre}
+                        type="button"
+                        className={`day-pill ${diaDestino === i ? 'is-active' : ''}`}
+                        onClick={() => setDiaDestino(i)}
+                        disabled={!rutinaSeleccionada}
+                      >
+                        {nombre.slice(0, 3)}
+                      </button>
+                    ))}
                   </div>
                 </div>
+
+                <button className="btn btn-primary btn-block" type="submit" disabled={!rutinaSeleccionada || diaDestino == null}>
+                  <Icon nombre="plus" /> Asignar{rutinaSeleccionada ? ` al ${DIAS[diaDestino ?? 0]}` : ''}
+                </button>
+
+                {rutinaSeleccionada && (
+                  <p className="helper-copy">
+                    Para mover una rutina: asígnala al día nuevo y quita la del día viejo.
+                  </p>
+                )}
+              </form>
+            )}
+          </section>
+
+          <section className="panel">
+            <div className="panel-head"><h3>Resumen</h3></div>
+            <div className="settings-list">
+              <div className="setting-row">
+                <span className="setting-icon"><Icon nombre="calendar" /></span>
+                <div className="setting-copy"><strong>{diasConRutina} días con rutina</strong><small>De 7 días</small></div>
               </div>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+              <div className="setting-row">
+                <span className="setting-icon"><Icon nombre="dumbbell" /></span>
+                <div className="setting-copy"><strong>{totalRutinas} rutinas</strong><small>Esta semana</small></div>
+              </div>
+              <div className="setting-row">
+                <span className="setting-icon"><Icon nombre="clock" /></span>
+                <div className="setting-copy"><strong>{7 - diasConRutina} días de descanso</strong><small>Recuperación planificada</small></div>
+              </div>
+            </div>
+          </section>
+
+          <AjustesAvisos plan={plan} />
+        </div>
+      </div>
+    </>
   )
 }

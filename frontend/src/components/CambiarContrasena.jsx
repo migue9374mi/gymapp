@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import api, { mensajeDeError } from '../api/axios'
+import Icon from './Icon'
+import { Avisos } from './ui'
 
 /**
  * Formulario para cambiar la contraseña.
@@ -57,75 +59,77 @@ export default function CambiarContrasena() {
   }
 
   return (
-    <div className="dashboard-card mb-4">
-      <h5 className="fw-bold mb-1">
-        <i className="bi bi-key me-2"></i>Cambiar contraseña
-      </h5>
-      <p className="text-muted small mb-3">
-        Necesitas la contraseña actual para poder cambiarla.
-      </p>
-
-      {error && <div className="alert alert-danger py-2">{error}</div>}
-      {exito && (
-        <div className="alert alert-success py-2">
-          <i className="bi bi-check-circle me-2"></i>{exito}
+    <section className="panel settings-panel">
+      <div className="panel-head">
+        <div>
+          <h3>Cambiar contraseña</h3>
+          <p className="helper-copy">Necesitas la contraseña actual para poder cambiarla.</p>
         </div>
-      )}
+        <span className="tag tag-ink"><Icon nombre="lock" /> Seguridad</span>
+      </div>
 
-      <form onSubmit={enviar}>
-        <div className="row g-3">
-          <div className="col-12">
-            <label className="form-label small text-muted">Contraseña actual</label>
-            <input
-              type="password"
-              className="form-control"
-              value={passwordActual}
-              onChange={(e) => setPasswordActual(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
+      <div className="panel-body">
+        <Avisos error={error} exito={exito} />
+
+        <form onSubmit={enviar}>
+          <div className="form-grid">
+            <div className="field field--full">
+              <label htmlFor="password-actual">Contraseña actual</label>
+              <input
+                id="password-actual"
+                type="password"
+                className="form-control"
+                value={passwordActual}
+                onChange={(e) => setPasswordActual(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="password-nueva">Contraseña nueva</label>
+              <input
+                id="password-nueva"
+                type="password"
+                className="form-control"
+                value={passwordNueva}
+                onChange={(e) => setPasswordNueva(e.target.value)}
+                autoComplete="new-password"
+                minLength={6}
+                required
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="password-repetida">Repite la nueva</label>
+              <input
+                id="password-repetida"
+                type="password"
+                className="form-control"
+                value={passwordRepetida}
+                onChange={(e) => setPasswordRepetida(e.target.value)}
+                autoComplete="new-password"
+                minLength={6}
+                required
+              />
+              {passwordRepetida && passwordNueva !== passwordRepetida && (
+                <span className="field-error">No coinciden</span>
+              )}
+            </div>
           </div>
 
-          <div className="col-md-6">
-            <label className="form-label small text-muted">Contraseña nueva</label>
-            <input
-              type="password"
-              className="form-control"
-              value={passwordNueva}
-              onChange={(e) => setPasswordNueva(e.target.value)}
-              autoComplete="new-password"
-              minLength={6}
-              required
-            />
-          </div>
-
-          <div className="col-md-6">
-            <label className="form-label small text-muted">Repite la nueva</label>
-            <input
-              type="password"
-              className="form-control"
-              value={passwordRepetida}
-              onChange={(e) => setPasswordRepetida(e.target.value)}
-              autoComplete="new-password"
-              minLength={6}
-              required
-            />
-            {passwordRepetida && passwordNueva !== passwordRepetida && (
-              <small className="text-danger">No coinciden</small>
-            )}
-          </div>
-
-          <div className="col-12">
+          <div className="form-actions">
             <button type="submit" className="btn btn-primary" disabled={guardando}>
               {guardando ? (
-                <><span className="spinner-border spinner-border-sm me-2"></span>Guardando...</>
+                <><span className="mini-spinner" /> Guardando…</>
               ) : (
-                <><i className="bi bi-check-lg me-2"></i>Guardar contraseña</>
+                <><Icon nombre="check" /> Guardar contraseña</>
               )}
             </button>
+            <span className="helper-copy">Mínimo 6 caracteres.</span>
           </div>
-        </div>
-      </form>
-    </div>
+        </form>
+      </div>
+    </section>
   )
 }

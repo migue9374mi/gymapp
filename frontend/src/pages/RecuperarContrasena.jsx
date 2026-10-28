@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
+import AuthShell from '../components/AuthShell'
+import Icon from '../components/Icon'
+import { Avisos } from '../components/ui'
+
+const TITULOS = {
+  cargando: 'Comprobando',
+  valido: <>Nueva<br />contraseña</>,
+  invalido: <>Enlace<br />caducado</>,
+  hecho: <>Contraseña<br />cambiada</>,
+}
 
 /**
  * Poner la contrasena nueva desde el enlace del correo.
@@ -68,105 +78,98 @@ export default function RecuperarContrasena() {
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2 className="text-center">
-          {estado === 'hecho' ? '¡Contraseña cambiada!' : 'Nueva contraseña'}
-        </h2>
-
-        {estado === 'cargando' && (
-          <div className="text-center py-4">
-            <div className="spinner-border text-danger" role="status"></div>
-            <p className="text-muted mt-3 mb-0">Comprobando el enlace...</p>
-          </div>
-        )}
-
-        {estado === 'invalido' && (
-          <>
-            <div className="alert alert-danger" role="alert">
-              <i className="bi bi-exclamation-triangle me-2"></i>
-              Este enlace no vale o se ha caducado.
-            </div>
-            <p className="text-muted small">
-              Los enlaces duran una hora y solo se pueden usar una vez. Pide uno nuevo y te lo
-              mandamos al instante.
-            </p>
-            <Link to="/olvide-contrasena" className="btn btn-primary w-100">
-              Pedir un enlace nuevo
-            </Link>
-          </>
-        )}
-
-        {estado === 'hecho' && (
-          <>
-            <div className="alert alert-success" role="alert">
-              <i className="bi bi-check-circle me-2"></i>
-              Ya puedes entrar con tu contraseña nueva.
-            </div>
-            <p className="text-muted small mb-0">Te llevamos al inicio de sesión...</p>
-          </>
-        )}
-
-        {estado === 'valido' && (
-          <>
-            <p className="subtitle text-center">
-              {nombre ? `Hola ${nombre}, pon tu contraseña nueva` : 'Pon tu contraseña nueva'}
-            </p>
-
-            {error && <div className="alert alert-danger" role="alert">{error}</div>}
-
-            <form onSubmit={enviar}>
-              <div className="mb-3">
-                <label htmlFor="password" className="form-label">Contraseña nueva</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  minLength={6}
-                  autoComplete="new-password"
-                  required
-                />
-              </div>
-
-              <div className="mb-4">
-                <label htmlFor="passwordRepetida" className="form-label">Repite la contraseña</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="passwordRepetida"
-                  value={passwordRepetida}
-                  onChange={(e) => setPasswordRepetida(e.target.value)}
-                  minLength={6}
-                  autoComplete="new-password"
-                  required
-                />
-                {passwordRepetida && password !== passwordRepetida && (
-                  <small className="text-danger">No coinciden</small>
-                )}
-              </div>
-
-              <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-                {loading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2"></span>
-                    Guardando...
-                  </>
-                ) : (
-                  'Guardar contraseña'
-                )}
-              </button>
-            </form>
-          </>
-        )}
-
-        <div className="text-center mt-4">
-          <Link to="/login" style={{ color: 'var(--rojo)', fontWeight: 600 }}>
-            Volver a iniciar sesión
-          </Link>
+    <AuthShell
+      eyebrow="Recuperar acceso"
+      titulo={TITULOS[estado]}
+      intro={
+        estado === 'valido'
+          ? (nombre ? `Hola ${nombre}, elige una contraseña nueva.` : 'Elige una contraseña nueva para tu cuenta.')
+          : estado === 'cargando'
+            ? 'Estamos comprobando que el enlace siga siendo válido.'
+            : null
+      }
+    >
+      {estado === 'cargando' && (
+        <div className="loading-panel" role="status">
+          <span className="loading-dot" />
+          <span>Comprobando el enlace…</span>
         </div>
-      </div>
-    </div>
+      )}
+
+      {estado === 'invalido' && (
+        <>
+          <div className="alert alert-danger" role="alert">
+            <Icon nombre="info" />
+            <span>Este enlace no vale o se ha caducado.</span>
+          </div>
+          <p className="helper-copy">
+            Los enlaces duran una hora y solo se pueden usar una vez. Pide uno
+            nuevo y te lo mandamos al instante.
+          </p>
+          <Link to="/olvide-contrasena" className="btn btn-primary btn-lg btn-block">
+            Pedir un enlace nuevo <Icon nombre="arrow-right" />
+          </Link>
+        </>
+      )}
+
+      {estado === 'hecho' && (
+        <>
+          <div className="alert alert-success" role="alert">
+            <Icon nombre="check" />
+            <span>Ya puedes entrar con tu contraseña nueva.</span>
+          </div>
+          <p className="helper-copy">Te llevamos al inicio de sesión…</p>
+        </>
+      )}
+
+      {estado === 'valido' && (
+        <>
+          <Avisos error={error} />
+
+          <form className="login-form" onSubmit={enviar}>
+            <div className="field">
+              <label htmlFor="password">Contraseña nueva</label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                autoComplete="new-password"
+                required
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="passwordRepetida">Repite la contraseña</label>
+              <input
+                id="passwordRepetida"
+                type="password"
+                value={passwordRepetida}
+                onChange={(e) => setPasswordRepetida(e.target.value)}
+                minLength={6}
+                autoComplete="new-password"
+                required
+              />
+              {passwordRepetida && password !== passwordRepetida && (
+                <span className="field-error">No coinciden</span>
+              )}
+            </div>
+
+            <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={loading}>
+              {loading ? (
+                <><span className="mini-spinner" /> Guardando…</>
+              ) : (
+                <>Guardar contraseña <Icon nombre="check" /></>
+              )}
+            </button>
+          </form>
+        </>
+      )}
+
+      <p className="auth-switch">
+        <Link to="/login">Volver a iniciar sesión</Link>
+      </p>
+    </AuthShell>
   )
 }

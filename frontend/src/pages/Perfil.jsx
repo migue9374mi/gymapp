@@ -1,17 +1,28 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import api, { mensajeDeError } from '../api/axios'
+import { useAuth } from '../context/AuthContext'
 import CambiarContrasena from '../components/CambiarContrasena'
 import FondoUsuario from '../components/FondoUsuario'
+import Icon from '../components/Icon'
+import { PageHead, StatCard, numero, fechaCorta } from '../components/ui'
 
 function formatearTiempo(minutos) {
-  if (!minutos) return '0h 0m'
-  const h = Math.floor(minutos / 60)
-  const m = minutos % 60
-  return h === 0 ? `${m}m` : m === 0 ? `${h}h` : `${h}h ${m}m`
+  const total = Number(minutos || 0)
+  if (!total) return '0 min'
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  return h === 0 ? `${m} min` : m === 0 ? `${h} h` : `${h} h ${m} min`
+}
+
+function iniciales(nombre) {
+  const p = String(nombre || '?').trim().split(/\s+/)
+  return p.length === 1 ? p[0].slice(0, 2).toUpperCase() : `${p[0][0]}${p[p.length - 1][0]}`.toUpperCase()
 }
 
 export default function Perfil() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
   const [datos, setDatos] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
@@ -30,222 +41,234 @@ export default function Perfil() {
     cargar()
   }, [])
 
+  const salir = () => {
+    logout()
+    navigate('/login')
+  }
+
+  const exportar = () => {
+    if (!datos) return
+    const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' })
+    const enlace = document.createElement('a')
+    enlace.href = URL.createObjectURL(blob)
+    enlace.download = 'gymapp-perfil.json'
+    document.body.appendChild(enlace)
+    enlace.click()
+    enlace.remove()
+    setTimeout(() => URL.revokeObjectURL(enlace.href), 1000)
+  }
+
   if (cargando) {
     return (
-      <div className="container py-5 text-center">
-        <div className="spinner-border text-danger" role="status"></div>
-      </div>
+      <>
+        <PageHead eyebrow="Tu cuenta" titulo="Perfil" />
+        <div className="loading-panel" role="status"><span className="loading-dot" /><span>Leyendo tu perfil…</span></div>
+      </>
     )
   }
 
   if (error) {
     return (
-      <div className="container py-5 text-center">
-        <p className="fs-1">😕</p>
-        <h5>{error}</h5>
-      </div>
+      <>
+        <PageHead eyebrow="Tu cuenta" titulo="Perfil" />
+        <div className="alert alert-danger">{error}</div>
+      </>
     )
   }
 
   const { usuario, resumen, porMusculo, topEjercicios, records, ultimas, corporal } = datos
-  const maxVolumen = Math.max(...porMusculo.map((m) => m.volumen), 1)
+  const maxVolumen = Math.max(...porMusculo.map((m) => Number(m.volumen || 0)), 1)
+  const volumenTotal = porMusculo.reduce((t, m) => t + Number(m.volumen || 0), 0)
+  const miembroDesde = usuario.fecha_registro
+    ? new Date(usuario.fecha_registro).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+    : '—'
 
   return (
-    <div className="container py-4">
-      {/* Cabecera */}
-      <div className="dashboard-card mb-4">
-        <div className="d-flex align-items-center gap-3 flex-wrap">
-          <div
-            className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
-            style={{ width: '70px', height: '70px', background: 'var(--rojo)', fontSize: '1.8rem' }}
-          >
-            {usuario.nombre.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-grow-1">
-            <h3 className="fw-bold mb-1" style={{ color: 'var(--tinta)' }}>{usuario.nombre}</h3>
-            <div className="text-muted">{usuario.email}</div>
-            <small className="text-muted">
-              Entrenando desde el {new Date(usuario.fecha_registro).toLocaleDateString('es-ES')}
-            </small>
-          </div>
-          <Link to="/medidas" className="btn btn-outline-primary">
-            <i className="bi bi-rulers me-2"></i>Actualizar medidas
-          </Link>
-        </div>
-      </div>
+    <>
+      <PageHead
+        eyebrow="Tu cuenta"
+        titulo="Perfil"
+        sub="Tus datos, tus preferencias y el control de la sesión."
+      />
 
-      <FondoUsuario />
-      <CambiarContrasena />
+      <section className="profile-hero">
+        <span className="avatar" aria-hidden="true">{iniciales(usuario.nombre)}</span>
+        <div>
+          <h1>{usuario.nombre}</h1>
+          <p>{usuario.email}<br />Miembro desde {miembroDesde}</p>
+          <div className="profile-tags">
+            <span><Icon nombre="flame" /> {resumen.rachaDiaria} días de racha</span>
+            <span><Icon nombre="trophy" /> {resumen.entrenamientos} sesiones</span>
+            <span><Icon nombre="dumbbell" /> {resumen.rutinasCreadas} rutinas</span>
+          </div>
+        </div>
+        <div className="profile-hero-actions">
+          <Link className="btn btn-lime" to="/medidas"><Icon nombre="ruler" /> Actualizar medidas</Link>
+          <button className="btn btn-ghost profile-logout" type="button" onClick={salir}>
+            <Icon nombre="logout" /> Salir
+          </button>
+        </div>
+      </section>
 
-      {/* Totales */}
-      <div className="row g-3 mb-4">
-        <div className="col-md-3 col-6">
-          <div className="stat-card primary">
-            <h3>{resumen.entrenamientos}</h3>
-            <p>Rutinas terminadas</p>
-          </div>
-        </div>
-        <div className="col-md-3 col-6">
-          <div className="stat-card success">
-            <h3>{formatearTiempo(resumen.minutos)}</h3>
-            <p>Tiempo entrenado</p>
-          </div>
-        </div>
-        <div className="col-md-3 col-6">
-          <div className="stat-card info">
-            <h3>{resumen.volumen.toLocaleString()}</h3>
-            <p>Volumen (kg)</p>
-          </div>
-        </div>
-        <div className="col-md-3 col-6">
-          <div className="stat-card warning">
-            <h3>{resumen.rachaDiaria}</h3>
-            <p>Dias seguidos</p>
-          </div>
-        </div>
+      <div className="progress-stats">
+        <StatCard icono="dumbbell" valor={resumen.entrenamientos} etiqueta="Rutinas terminadas" />
+        <StatCard icono="clock" valor={formatearTiempo(resumen.minutos)} etiqueta="Tiempo entrenado" />
+        <StatCard icono="chart" valor={resumen.volumen ? `${numero(resumen.volumen / 1000)} t` : '0 t'} etiqueta="Volumen levantado" />
+        <StatCard icono="flame" valor={resumen.rachaDiaria} etiqueta="Días de racha" />
       </div>
 
       {resumen.entrenamientos === 0 ? (
-        <div className="dashboard-card text-center py-5">
-          <p className="fs-1 mb-2">📊</p>
-          <h5 className="fw-bold">Tu perfil se llenara con tus datos</h5>
-          <p className="text-muted mb-4">
-            Termina tu primera rutina y aqui veras volumen, records, distribucion por musculo y mas.
-          </p>
-          <Link to="/entrenar" className="btn btn-primary">
-            <i className="bi bi-play-fill me-2"></i>Ir a entrenar
-          </Link>
+        <div className="empty-state">
+          <span className="empty-icon"><Icon nombre="chart" /></span>
+          <h3>Tu perfil se llenará con tus datos</h3>
+          <p>Termina tu primera rutina y aquí verás volumen, récords y distribución por músculo.</p>
+          <Link className="btn btn-primary" to="/entrenar"><Icon nombre="play" /> Ir a entrenar</Link>
         </div>
       ) : (
-        <div className="row g-4">
-          {/* Distribucion por musculo */}
-          <div className="col-lg-6">
-            <div className="dashboard-card h-100">
-              <h5 className="fw-bold mb-4"><i className="bi bi-bar-chart me-2"></i>Trabajo por músculo</h5>
-              {porMusculo.length === 0 ? (
-                <p className="text-muted">Sin datos de volumen todavía</p>
-              ) : (
-                porMusculo.map((m) => (
-                  <div key={m.musculo} className="mb-3">
-                    <div className="d-flex justify-content-between mb-1">
-                      <span className="text-muted text-capitalize">{m.musculo}</span>
-                      <span className="fw-semibold">
-                        {Math.round(m.volumen).toLocaleString()} kg
-                        <small className="text-muted ms-2">{m.series} series</small>
-                      </span>
-                    </div>
-                    <div className="progress">
-                      <div className="progress-bar bg-danger"
-                        style={{ width: `${(m.volumen / maxVolumen) * 100}%` }}></div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Records personales */}
-          <div className="col-lg-6">
-            <div className="dashboard-card h-100">
-              <h5 className="fw-bold mb-4"><i className="bi bi-trophy me-2"></i>Tus records</h5>
-              {records.length === 0 ? (
-                <p className="text-muted">Aun no hay pesos registrados</p>
-              ) : (
-                records.map((r, i) => (
-                  <div key={r.nombre} className="d-flex justify-content-between align-items-center p-2 mb-2 rounded"
-                    style={{ background: i === 0 ? 'var(--crema)' : 'var(--papel-hondo)' }}>
-                    <div>
-                      <span className="fw-semibold">{r.nombre}</span>
-                      {i === 0 && <i className="bi bi-trophy-fill text-warning ms-2"></i>}
-                      <small className="text-muted d-block text-capitalize">{r.musculo}</small>
-                    </div>
-                    <span className="fw-bold" style={{ color: 'var(--rojo)' }}>{r.max_peso} kg</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Top ejercicios */}
-          <div className="col-lg-6">
-            <div className="dashboard-card h-100">
-              <h5 className="fw-bold mb-4"><i className="bi bi-fire me-2"></i>Ejercicios más trabajados</h5>
-              {topEjercicios.length === 0 ? (
-                <p className="text-muted">Sin datos todavía</p>
-              ) : (
-                topEjercicios.map((e, i) => (
-                  <div key={e.nombre} className="d-flex justify-content-between align-items-center py-2 border-bottom">
-                    <div className="d-flex align-items-center gap-2">
-                      <span className="badge bg-secondary">{i + 1}</span>
-                      <span className="fw-semibold">{e.nombre}</span>
-                    </div>
-                    <div className="text-end">
-                      <div className="fw-semibold">{Math.round(e.volumen).toLocaleString()} kg</div>
-                      <small className="text-muted">{e.series} series</small>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Ultimas rutinas */}
-          <div className="col-lg-6">
-            <div className="dashboard-card h-100">
-              <h5 className="fw-bold mb-4"><i className="bi bi-clock-history me-2"></i>Últimas rutinas</h5>
-              {ultimas.map((s) => (
-                <div key={s.id} className="d-flex justify-content-between align-items-center py-2 border-bottom">
-                  <div>
-                    <div className="fw-semibold">{s.rutina_nombre || 'Entrenamiento libre'}</div>
-                    <small className="text-muted">
-                      {s.fecha}
-                      {s.hora_inicio && s.hora_fin && ` · ${s.hora_inicio}-${s.hora_fin}`}
-                    </small>
-                  </div>
-                  <span className="badge bg-success">{formatearTiempo(s.duracion_minutos)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Estado corporal */}
-          {corporal.peso && (
-            <div className="col-12">
-              <div className="dashboard-card">
-                <h5 className="fw-bold mb-4"><i className="bi bi-heart-pulse me-2"></i>Tu estado corporal</h5>
-                <div className="row g-3">
-                  <div className="col-md-3 col-6">
-                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
-                      <div className="fs-3 fw-bold text-primary">{corporal.peso} kg</div>
-                      <small className="text-muted">Peso</small>
-                    </div>
-                  </div>
-                  <div className="col-md-3 col-6">
-                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
-                      <div className="fs-3 fw-bold text-info">{corporal.altura} cm</div>
-                      <small className="text-muted">Altura</small>
-                    </div>
-                  </div>
-                  <div className="col-md-3 col-6">
-                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
-                      <div className="fs-3 fw-bold" style={{ color: 'var(--verde)' }}>{corporal.imc}</div>
-                      <small className="text-muted">IMC · {corporal.categoria}</small>
-                    </div>
-                  </div>
-                  <div className="col-md-3 col-6">
-                    <div className="text-center p-3 rounded" style={{ background: 'var(--papel-hondo)' }}>
-                      <div className="fs-3 fw-bold" style={{ color: corporal.cambioPeso > 0 ? 'var(--rojo)' : 'var(--verde)' }}>
-                        {corporal.cambioPeso > 0 ? '+' : ''}{corporal.cambioPeso} kg
-                      </div>
-                      <small className="text-muted">Cambio de peso</small>
-                    </div>
-                  </div>
-                </div>
+        <div className="profile-grid">
+          <div className="side-stack">
+            <section className="panel">
+              <div className="panel-head">
+                <h3>Trabajo por músculo</h3>
+                <span className="tag tag-ink">{numero(volumenTotal / 1000)} t</span>
               </div>
-            </div>
-          )}
+              {porMusculo.length === 0 ? (
+                <p className="panel-loading">Sin datos de volumen todavía.</p>
+              ) : (
+                <div className="muscle-bars" style={{ padding: 17 }}>
+                  {porMusculo.map((m) => (
+                    <div className="muscle-row" key={m.musculo} title={`${numero(m.volumen)} kg · ${m.series} series`}>
+                      <span>{m.musculo}</span>
+                      <span className="muscle-track"><span className="muscle-fill" style={{ width: `${(Number(m.volumen) / maxVolumen) * 100}%` }} /></span>
+                      <span>{numero(m.volumen / 1000)}t</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="panel">
+              <div className="panel-head"><h3>Tus récords</h3><span className="tag tag-lime">Top 5</span></div>
+              {records.length === 0 ? (
+                <p className="panel-loading">Aún no hay pesos registrados.</p>
+              ) : (
+                <div className="record-list">
+                  {records.map((r, i) => (
+                    <div className="record-row" key={r.nombre}>
+                      <span className="exercise-num">{String(i + 1).padStart(2, '0')}</span>
+                      <span className="record-copy">
+                        <strong>{r.nombre}</strong>
+                        <small>{r.musculo}</small>
+                      </span>
+                      <span className="record-value">{numero(r.max_peso)} <small>kg</small></span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="panel">
+              <div className="panel-head">
+                <h3>Últimas rutinas</h3>
+                <Link className="panel-link" to="/progreso">Ver progreso <Icon nombre="arrow-right" /></Link>
+              </div>
+              {ultimas.length === 0 ? (
+                <p className="panel-loading">Sin sesiones todavía.</p>
+              ) : (
+                <div className="mini-history">
+                  {ultimas.map((s) => (
+                    <div className="mini-history-row mini-history-row--static" key={s.id}>
+                      <span>
+                        <strong>{s.rutina_nombre || 'Entrenamiento libre'}</strong>
+                        <small>{fechaCorta(s.fecha)} · {formatearTiempo(s.duracion_minutos)}</small>
+                      </span>
+                      <span className="tag tag-green">Hecha</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+
+          <div className="side-stack">
+            <section className="panel">
+              <div className="panel-head"><h3>Tu cuenta</h3></div>
+              <div className="account-stats">
+                <div className="account-stat"><strong>{resumen.entrenamientos}</strong><span>Sesiones</span></div>
+                <div className="account-stat"><strong>{resumen.rachaDiaria}</strong><span>Racha</span></div>
+                <div className="account-stat"><strong>{resumen.rutinasCreadas}</strong><span>Rutinas</span></div>
+              </div>
+              <div className="more-list">
+                <a className="more-row" href="#preferencias">
+                  <Icon nombre="settings" /><span>Preferencias</span><Icon nombre="chevron-right" />
+                </a>
+                <Link className="more-row" to="/medidas">
+                  <Icon nombre="ruler" /><span>Medidas corporales</span><Icon nombre="chevron-right" />
+                </Link>
+                <Link className="more-row" to="/fotos">
+                  <Icon nombre="camera" /><span>Fotos de progreso</span><Icon nombre="chevron-right" />
+                </Link>
+                <button className="more-row" type="button" onClick={exportar}>
+                  <Icon nombre="arrow-up-right" /><span>Exportar mis datos</span><Icon nombre="chevron-right" />
+                </button>
+                <button className="more-row danger" type="button" onClick={salir}>
+                  <Icon nombre="logout" /><span>Cerrar sesión</span><Icon nombre="chevron-right" />
+                </button>
+              </div>
+            </section>
+
+            {corporal.peso && (
+              <section className="panel">
+                <div className="panel-head"><h3>Estado corporal</h3></div>
+                <div className="body-measures">
+                  <div className="body-measure"><span>Peso</span><strong>{numero(corporal.peso)} <small>kg</small></strong></div>
+                  <div className="body-measure"><span>Altura</span><strong>{numero(corporal.altura)} <small>cm</small></strong></div>
+                  <div className="body-measure"><span>IMC</span><strong>{corporal.imc} <small>{corporal.categoria}</small></strong></div>
+                  <div className="body-measure">
+                    <span>Cambio</span>
+                    <strong style={{ color: Number(corporal.cambioPeso) > 0 ? 'var(--orange-ink)' : 'var(--green)' }}>
+                      {Number(corporal.cambioPeso) > 0 ? '+' : ''}{corporal.cambioPeso} <small>kg</small>
+                    </strong>
+                  </div>
+                </div>
+                <div className="panel-foot">
+                  <Link className="btn btn-ghost btn-sm" to="/medidas">Actualizar medidas <Icon nombre="arrow-right" /></Link>
+                </div>
+              </section>
+            )}
+
+            <section className="panel">
+              <div className="panel-head"><h3>Ejercicios más trabajados</h3></div>
+              {topEjercicios.length === 0 ? (
+                <p className="panel-loading">Sin datos todavía.</p>
+              ) : (
+                <div className="record-list">
+                  {topEjercicios.map((e, i) => (
+                    <div className="record-row" key={e.nombre}>
+                      <span className="exercise-num">{i + 1}</span>
+                      <span className="record-copy">
+                        <strong>{e.nombre}</strong>
+                        <small>{e.series} series</small>
+                      </span>
+                      <span className="record-value">{numero(e.volumen / 1000)} <small>t</small></span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
         </div>
       )}
-    </div>
+
+      <div className="settings-layout" id="preferencias">
+        <FondoUsuario />
+        <CambiarContrasena />
+      </div>
+
+      <aside className="side-note">
+        <h4>Hecho para los tuyos</h4>
+        <p>GymApp es privada: solo tú y tu familia tenéis acceso. Los datos se guardan en vuestro propio espacio.</p>
+      </aside>
+    </>
   )
 }
